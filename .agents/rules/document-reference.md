@@ -1,3 +1,8 @@
+---
+trigger: always_on
+glob: 
+description: document reference
+---
 # NEAR Protocol - Document Reference
 ## Phân tích Blockchain như một hệ cơ sở dữ liệu phân tán
 
