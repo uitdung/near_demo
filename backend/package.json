@@ -1,0 +1,16 @@
+{
+    "name": "near-demo-backend",
+    "version": "1.0.0",
+    "description": "Backend API for NEAR Protocol Demo",
+    "type": "module",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "node --watch src/index.js"
+    },
+    "dependencies": {
+        "near-api-js": "^4.0.0",
+        "express": "^4.18.2",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1"
+    }
+}

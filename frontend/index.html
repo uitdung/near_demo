@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEAR Protocol Demo - Blockchain Data Store</title>
+  <meta name="description" content="Demo minh họa cơ chế lưu trữ và truy vấn dữ liệu trên NEAR Blockchain">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>🌐 NEAR Protocol Demo</h1>
+      <p class="subtitle">Blockchain Data Store - Key-Value Storage</p>
+      <div class="connection-status" id="connectionStatus">
+        <span class="status-dot"></span>
+        <span class="status-text">Checking connection...</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Data Entry Form -->
+      <section class="card form-section">
+        <h2>📝 Save Data to Blockchain</h2>
+        <form id="dataForm" class="data-form">
+          <div class="form-group">
+            <label for="keyInput">Key</label>
+            <input type="text" id="keyInput" placeholder="Nhập key (ví dụ: user1)" required>
+          </div>
+          <div class="form-group">
+            <label for="valueInput">Value</label>
+            <input type="text" id="valueInput" placeholder="Nhập value (ví dụ: Alice)" required>
+          </div>
+          <button type="submit" class="btn btn-primary" id="saveBtn">
+            <span class="btn-text">Save to Blockchain</span>
+            <span class="btn-loading" hidden>Processing...</span>
+          </button>
+        </form>
+        
+        <!-- Transaction Info -->
+        <div id="transactionInfo" class="transaction-info" hidden>
+          <h4>📜 Transaction Details</h4>
+          <div class="info-row">
+            <span>Hash:</span>
+            <a id="txHash" href="#" target="_blank" class="hash-link"></a>
+          </div>
+          <div class="info-row">
+            <span>Status:</span>
+            <span id="txStatus" class="status-badge"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Data Display -->
+      <section class="card data-section">
+        <div class="section-header">
+          <h2>📊 Stored Data</h2>
+          <div class="actions">
+            <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh</button>
+            <button class="btn btn-secondary" id="exportJsonBtn">📄 Export JSON</button>
+            <button class="btn btn-secondary" id="exportCsvBtn">📊 Export CSV</button>
+          </div>
+        </div>
+        
+        <div class="stats" id="stats">
+          <span>Total entries: <strong id="totalCount">0</strong></span>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-container">
+          <table class="data-table" id="dataTable">
+            <thead>
+              <tr>
+                <th>Key</th>
+                <th>Value</th>
+                <th>Sender</th>
+                <th>Timestamp</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="dataBody">
+              <!-- Data rows will be inserted here -->
+            </tbody>
+          </table>
+        </div>
+        
+        <div id="emptyState" class="empty-state" hidden>
+          <p>📭 No data stored yet</p>
+          <p>Add some data using the form above!</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>NEAR Protocol Demo - Demonstrating blockchain data storage and retrieval</p>
+      <p>
+        <a href="https://docs.near.org" target="_blank">📚 NEAR Docs</a>
+        <span>|</span>
+        <a href="https://testnet.nearblocks.io" target="_blank">🔍 NEAR Explorer</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
