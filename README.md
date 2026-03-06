@@ -19,7 +19,7 @@ Demo minh họa cơ chế lưu trữ và truy vấn dữ liệu trên NEAR Block
                                ▼
                         ┌─────────────────┐
                         │ Smart Contract  │
-                        │    (JS SDK)     │
+                        │   (Rust SDK)    │
                         └─────────────────┘
 ```
 
@@ -27,10 +27,10 @@ Demo minh họa cơ chế lưu trữ và truy vấn dữ liệu trên NEAR Block
 
 ```
 near_demo/
-├── contract/           # Smart Contract (JavaScript/near-sdk-js)
+├── contract/           # Smart Contract (Rust/near-sdk-rs)
 │   ├── src/
-│   │   └── index.js   # Contract logic
-│   ├── package.json
+│   │   └── lib.rs     # Contract logic
+│   ├── Cargo.toml
 │   └── README.md
 ├── backend/            # Backend API (Node.js/Express)
 │   ├── src/
@@ -88,10 +88,15 @@ near create-account kvstore.your-account.testnet --masterAccount your-account.te
 # Set environment
 export NEAR_CONTRACT_ID=kvstore.your-account.testnet
 
-# Build & deploy
+# Build contract (requires Rust)
 cd contract
-npm run build
-npm run deploy
+cargo build --target wasm32-unknown-unknown --release
+
+# Deploy using near-cli
+near deploy $NEAR_CONTRACT_ID target/wasm32-unknown-unknown/release/key_value_store.wasm
+
+# Or use the dev-deploy for testing
+near dev-deploy target/wasm32-unknown-unknown/release/key_value_store.wasm
 ```
 
 ### 5. Chạy Backend
@@ -129,17 +134,37 @@ Mở file `frontend/index.html` trong browser hoặc dùng live server.
 
 ## 🔧 Contract Methods
 
-### View Methods (Free)
-```bash
-near view $CONTRACT_ID get_data '{"key": "user1"}'
-near view $CONTRACT_ID get_all_data
-near view $CONTRACT_ID count
+The Smart Contract này được implement bằng **Rust** với `near-sdk-rs`.
+
+### Data Structure
+```rust
+pub struct DataEntry {
+    pub key: String,
+    pub value: String,
+    pub sender: String,
+    pub timestamp: u64,
+}
 ```
 
-### Change Methods (Gas)
+### View Methods (Free - no gas)
 ```bash
-near call $CONTRACT_ID set_data '{"key": "user1", "value": "Alice"}' --accountId your-account.testnet
-near call $CONTRACT_ID delete_data '{"key": "user1"}' --accountId your-account.testnet
+# Get single entry
+near view $NEAR_CONTRACT_ID get_data '{"key": "user1"}'
+
+# Get all entries
+near view $NEAR_CONTRACT_ID get_all_data
+
+# Get count
+near view $NEAR_CONTRACT_ID count
+```
+
+### Change Methods (Requires gas)
+```bash
+# Set data
+near call $NEAR_CONTRACT_ID set_data '{"key": "user1", "value": "Alice"}' --accountId your-account.testnet
+
+# Delete data
+near call $NEAR_CONTRACT_ID delete_data '{"key": "user1"}' --accountId your-account.testnet
 ```
 
 ## 🌐 Useful Links

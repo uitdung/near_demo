@@ -1,0 +1,13 @@
+[toolchain]
+channel = "stable-x86_64"
+targets = ["x86_64-unknown-linux-gnu"]
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+overflow-checks = true
+
+debug = false
+rpath = false
