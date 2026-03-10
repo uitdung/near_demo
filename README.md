@@ -42,12 +42,15 @@ near_demo/
 
 - Node.js v18+
 - Rust toolchain
-- wasm target: `rustup target add wasm32-unknown-unknown`
+- `cargo-near` (`cargo install cargo-near --locked`)
+- `near-cli-rs` (`npm install -g near-cli-rs@latest`)
 - Docker Desktop
 - 1 NEAR testnet account với private key
 
 > [!NOTE]
-> Project này **không cần `near-cli`**. Deploy được thực hiện bằng `near-api-js` trực tiếp.
+> Flow đúng theo docs là: dùng **`cargo near build`** để tạo contract artifact trong `target/near`, sau đó dùng **`near-cli-rs`** (lệnh `near`) để deploy, init và verify contract.
+>
+> **`near-cli-rs` không thay thế `cargo-near` cho bước build.**
 
 ### 2. Cấu hình môi trường
 
@@ -85,6 +88,15 @@ npm run setup
 ```bash
 npm run build:contract
 npm run deploy:contract
+```
+
+- `npm run build:contract` → chạy `cargo near build non-reproducible-wasm` (**cần `cargo-near`**)
+- `npm run deploy:contract` → chạy `near deploy`, `near call`, `near view` (**cần `near-cli-rs`**)
+
+Deploy artifact:
+
+```text
+contract/target/near/near_kv_store.wasm
 ```
 
 ### 5. Chạy App
@@ -157,6 +169,8 @@ curl -X POST http://localhost:3000/api/data \
 ## 🌐 Useful Links
 
 - **NEAR Docs**: https://docs.near.org
+- **near-cli-rs**: https://docs.near.org/tools/near-cli
+- **near-cli-rs GitHub**: https://github.com/near/near-cli-rs
 - **near-api-js**: https://docs.near.org/tools/near-api
 - **Testnet Wallet**: https://testnet.mynearwallet.com
 - **Testnet Explorer**: https://testnet.nearblocks.io

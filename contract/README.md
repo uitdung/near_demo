@@ -5,17 +5,29 @@ Smart contract bằng Rust để minh họa lưu trữ và truy vấn dữ liệ
 ## Build
 
 ```bash
-# Build release
-cargo build --target wasm32-unknown-unknown --release
+# Install the NEAR contract build tool once
+cargo install cargo-near --locked
 
-# Hoặc dùng near-cli
-near build
+# Build a NEAR-compatible release artifact
+cargo near build
 ```
+
+Output artifact:
+
+```text
+target/near/near_kv_store.wasm
+```
+
+> [!IMPORTANT]
+> Không nên deploy file build thô từ `target/wasm32-unknown-unknown/release`, vì có thể gặp lỗi `CompilationError(PrepareError(Deserialization))` trên NEAR.
 
 ## Deploy
 
 ```bash
-near deploy --accountId $NEAR_CONTRACT_ID --wasmFile target/wasm32-unknown-unknown/release/near_kv_store.wasm
+# Install near-cli-rs once
+npm install -g near-cli-rs@latest
+
+near deploy $NEAR_CONTRACT_ID ./target/near/near_kv_store.wasm --networkId testnet
 ```
 
 ## Usage

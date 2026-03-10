@@ -23,14 +23,17 @@ NEAR_MASTER_ACCOUNT=your-account.testnet
 
 - **Node.js v18+**
 - **Rust toolchain**
-- **wasm target**: `rustup target add wasm32-unknown-unknown`
+- **cargo-near**: `cargo install cargo-near --locked`
+- **near-cli-rs**: `npm install -g near-cli-rs@latest`
 - **Docker Desktop** đang chạy
 - **1 NEAR testnet account** có sẵn
 - **Private key** của account đó
 - Account có đủ testnet NEAR để deploy và gas
 
 > [!NOTE]
-> Project này **không cần `near-cli`**. Deploy contract được thực hiện bằng `near-api-js` trực tiếp.
+> Flow đúng là dùng **`cargo near build`** để tạo artifact deployable, sau đó dùng **`near-cli-rs`** (`near`) để deploy contract và gọi method theo docs chính thức.
+>
+> **`near-cli-rs` không build Rust contract**; bước build vẫn cần **`cargo-near`**.
 
 ---
 
@@ -85,7 +88,7 @@ npm run build:contract
 WASM output:
 
 ```text
-contract/target/wasm32-unknown-unknown/release/near_kv_store.wasm
+contract/target/near/near_kv_store.wasm
 ```
 
 ---
@@ -98,10 +101,11 @@ npm run deploy:contract
 ```
 
 Script sẽ:
-1. Build contract
-2. Deploy `.wasm` lên `your-account.testnet`
-3. Gọi `new()` để init contract
-4. Hiển thị link explorer
+1. Build contract bằng `cargo near build` (**cần `cargo-near`**)
+2. Kiểm tra `near-cli-rs` đã được cài
+3. Deploy artifact `contract/target/near/near_kv_store.wasm`
+4. Gọi `new()` để init contract bằng `near call`
+5. Verify bằng `near view`
 
 ---
 
@@ -158,11 +162,22 @@ npm run reset
 ### `Not enough balance`
 - Nạp thêm NEAR từ [near-faucet.io](https://near-faucet.io)
 
-### Lỗi build Rust
+### Lỗi build contract
 ```bash
-rustup target add wasm32-unknown-unknown
+cargo install cargo-near --locked
 npm run build:contract
 ```
+
+### `near: command not found`
+```bash
+npm install -g near-cli-rs@latest
+near --version
+```
+
+### `CompilationError(PrepareError(Deserialization))`
+- Không deploy file build thô từ `cargo build`
+- Chạy lại `npm run build:contract` để tạo artifact trong `contract/target/near`
+- Sau đó chạy lại `npm run deploy:contract`
 
 ---
 

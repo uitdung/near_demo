@@ -6,7 +6,7 @@
     "description": "NEAR Protocol Demo",
     "scripts": {
         "setup": "npm install && cd backend && npm install",
-        "build:contract": "cargo build --target wasm32-unknown-unknown --release --manifest-path contract/Cargo.toml",
+        "build:contract": "node scripts/build-contract.js",
         "deploy:contract": "node scripts/deploy-contract.js",
         "start": "docker compose up --build",
         "start:detached": "docker compose up --build -d",

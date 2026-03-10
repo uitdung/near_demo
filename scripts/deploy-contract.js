@@ -1,13 +1,5 @@
-/**
- * Deploy Contract Script
- * 
- * Deploy NEAR smart contract using near-api-js directly
- * No dependency on deprecated near-cli
- */
-
-import { connect, keyStores, utils } from 'near-api-js';
-import { readFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
+import { existsSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -15,170 +7,133 @@ import dotenv from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
+const CONTRACT_DIR = path.join(PROJECT_ROOT, 'contract');
+const WASM_FILE = path.join(CONTRACT_DIR, 'target', 'near', 'near_kv_store.wasm');
+const BUILD_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'build-contract.js');
 
 dotenv.config({ path: path.join(PROJECT_ROOT, '.env') });
 
-const CONTRACT_DIR = path.join(PROJECT_ROOT, 'contract');
-const WASM_FILE = path.join(
-    CONTRACT_DIR,
-    'target',
-    'wasm32-unknown-unknown',
-    'release',
-    'near_kv_store.wasm'
-);
-
-// Configuration from environment
 const clean = (value) => {
     if (value == null) return undefined;
-    const trimmed = String(value).trim();
-    return trimmed.replace(/^['"]|['"]$/g, '');
+    return String(value).trim().replace(/^['"]|['"]$/g, '');
 };
 
 const config = {
     networkId: clean(process.env.NEAR_NETWORK) || 'testnet',
-    nodeUrl: clean(process.env.NEAR_NODE_URL) || 'https://rpc.testnet.near.org',
     contractId: clean(process.env.NEAR_CONTRACT_ID),
     masterAccount: clean(process.env.NEAR_MASTER_ACCOUNT),
-    masterPrivateKey: clean(process.env.NEAR_MASTER_PRIVATE_KEY),
 };
 
-console.log('🚀 NEAR Contract Deployment (via near-api-js)\n');
-
-// Validate configuration
-if (!config.contractId) {
-    console.error('❌ NEAR_CONTRACT_ID is required in C:/project/near_demo/.env');
+function fail(message) {
+    console.error(`❌ ${message}`);
     process.exit(1);
+}
+
+function run(command, options = {}) {
+    console.log(`$ ${command}`);
+    return execSync(command, {
+        cwd: PROJECT_ROOT,
+        stdio: 'pipe',
+        encoding: 'utf8',
+        ...options,
+    });
+}
+
+function runAndPrint(command) {
+    try {
+        const output = run(command);
+        if (output?.trim()) {
+            console.log(output.trim());
+        }
+        return output;
+    } catch (error) {
+        if (error.stdout?.trim()) console.log(error.stdout.trim());
+        if (error.stderr?.trim()) console.error(error.stderr.trim());
+        throw error;
+    }
+}
+
+console.log('🚀 NEAR Contract Deployment (via near-cli-rs)\n');
+
+if (!config.contractId) {
+    fail('NEAR_CONTRACT_ID is required in C:/project/near_demo/.env');
 }
 
 if (!config.masterAccount) {
-    console.error('❌ NEAR_MASTER_ACCOUNT is required in C:/project/near_demo/.env');
-    process.exit(1);
-}
-
-if (!config.masterPrivateKey) {
-    console.error('❌ NEAR_MASTER_PRIVATE_KEY is required in C:/project/near_demo/.env');
-    process.exit(1);
+    fail('NEAR_MASTER_ACCOUNT is required in C:/project/near_demo/.env');
 }
 
 console.log('📦 Configuration:');
 console.log(`   Network: ${config.networkId}`);
-console.log(`   RPC: ${config.nodeUrl}`);
 console.log(`   Contract ID: ${config.contractId}`);
-console.log(`   Deployer: ${config.masterAccount}\n`);
+console.log(`   Signer: ${config.masterAccount}\n`);
 
-// Step 1: Build contract
 console.log('🔧 Step 1: Building Rust contract...');
 try {
-    execSync('cargo build --target wasm32-unknown-unknown --release', {
-        cwd: CONTRACT_DIR,
+    execSync(`node "${BUILD_SCRIPT}"`, {
+        cwd: PROJECT_ROOT,
         stdio: 'inherit',
     });
     console.log('✅ Build successful!\n');
-} catch (error) {
-    console.error('❌ Build failed. Make sure Rust and wasm32-unknown-unknown target are installed.');
-    console.error('   Run: rustup target add wasm32-unknown-unknown');
-    process.exit(1);
+} catch {
+    fail('Build failed. Make sure `cargo-near` is installed and `cargo near build non-reproducible-wasm` works locally.');
 }
 
-// Step 2: Check WASM file
 if (!existsSync(WASM_FILE)) {
-    console.error(`❌ WASM file not found at: ${WASM_FILE}`);
-    process.exit(1);
-}
-console.log(`📁 WASM file: ${WASM_FILE}`);
-
-const wasmBuffer = readFileSync(WASM_FILE);
-console.log(`   Size: ${(wasmBuffer.length / 1024).toFixed(2)} KB\n`);
-
-// Step 3: Connect to NEAR and deploy
-console.log('📤 Step 2: Deploying contract...');
-
-async function deploy() {
-    // Setup key store
-    const keyStore = new keyStores.InMemoryKeyStore();
-    const keyPair = utils.KeyPair.fromString(config.masterPrivateKey);
-    await keyStore.setKey(config.networkId, config.masterAccount, keyPair);
-
-    const storedKey = await keyStore.getKey(config.networkId, config.masterAccount);
-    if (!storedKey) {
-        console.error('❌ KeyStore did not persist signer key.');
-        console.error(`   networkId='${config.networkId}', accountId='${config.masterAccount}'`);
-        process.exit(1);
-    }
-
-    console.log(`🔑 Using signer key: ${storedKey.getPublicKey().toString()}\n`);
-
-    // Connect to NEAR
-    const near = await connect({
-        networkId: config.networkId,
-        nodeUrl: config.nodeUrl,
-        keyStore,
-    });
-
-    const account = await near.account(config.masterAccount);
-
-    // Check account balance
-    const balance = await account.getAccountBalance();
-    console.log(`💰 Account balance: ${(BigInt(balance.total) / 1000000000000000000000000n).toString()} NEAR\n`);
-
-    // Deploy contract
-    try {
-        const result = await account.deployContract(wasmBuffer);
-        console.log('✅ Contract deployed successfully!');
-        console.log(`   Transaction hash: ${result.transaction.hash}\n`);
-    } catch (error) {
-        console.error('❌ Deployment failed:', error.message);
-        process.exit(1);
-    }
-
-    // Step 4: Initialize contract
-    console.log('🔧 Step 3: Initializing contract...');
-    try {
-        const initResult = await account.functionCall({
-            contractId: config.contractId,
-            methodName: 'new',
-            args: {},
-            gas: '30000000000000', // 30 TGas
-        });
-        console.log('✅ Contract initialized successfully!');
-        console.log(`   Transaction hash: ${initResult.transaction.hash}\n`);
-    } catch (error) {
-        if (error.message?.includes('already initialized') || error.toString()?.includes('Already initialized')) {
-            console.log('ℹ️  Contract was already initialized. Skipping.\n');
-        } else {
-            console.error('⚠️  Initialization warning:', error.message);
-            console.log('   You may need to initialize manually.\n');
-        }
-    }
-
-    // Step 5: Verify deployment
-    console.log('🔍 Step 4: Verifying deployment...');
-    try {
-        const count = await account.viewFunction({
-            contractId: config.contractId,
-            methodName: 'count',
-            args: {},
-        });
-        console.log(`✅ Contract is working! Current count: ${count}\n`);
-    } catch (error) {
-        console.error('⚠️  Could not verify contract:', error.message);
-        console.log('   Contract may still be deployed correctly.\n');
-    }
-
-    // Final summary
-    console.log('═══════════════════════════════════════════════════════════');
-    console.log('🎉 Deployment complete!\n');
-    console.log('📋 Contract details:');
-    console.log(`   Account: ${config.contractId}`);
-    console.log(`   Explorer: https://testnet.nearblocks.io/address/${config.contractId}\n`);
-    console.log('📝 Next steps:');
-    console.log('   1. Make sure C:/project/near_demo/.env is filled correctly');
-    console.log('   2. Run: npm start');
-    console.log('   3. Open: http://localhost:8080');
-    console.log('═══════════════════════════════════════════════════════════');
+    fail(`WASM file not found at: ${WASM_FILE}`);
 }
 
-deploy().catch((error) => {
-    console.error('\n❌ Deployment failed:', error);
-    process.exit(1);
-});
+console.log('🔍 Step 2: Checking near-cli-rs...');
+try {
+    const version = run('near --version');
+    console.log(version.trim());
+    console.log('✅ near-cli-rs is available!\n');
+} catch {
+    fail('Missing `near-cli-rs`. Install it with `npm install -g near-cli-rs@latest` or the Windows installer from the official docs.');
+}
+
+console.log('📤 Step 3: Deploying contract...');
+try {
+    runAndPrint(`near deploy ${config.contractId} "${WASM_FILE}" --networkId ${config.networkId}`);
+    console.log('✅ Contract deployed successfully!\n');
+} catch {
+    fail('Deployment failed. Make sure the account is available in `near-cli-rs` (for example via `near login`) and has enough balance.');
+}
+
+console.log('🔧 Step 4: Initializing contract...');
+try {
+    runAndPrint(`near call ${config.contractId} new '{}' --useAccount ${config.masterAccount} --networkId ${config.networkId}`);
+    console.log('✅ Contract initialized successfully!\n');
+} catch (error) {
+    const combined = `${error.stdout || ''}\n${error.stderr || ''}`;
+    if (combined.includes('already initialized') || combined.includes('The contract has already been initialized')) {
+        console.log('ℹ️  Contract was already initialized. Skipping.\n');
+    } else {
+        console.error('⚠️  Initialization warning. You may need to initialize manually with near-cli-rs.');
+        console.log('');
+    }
+}
+
+console.log('🔍 Step 5: Verifying deployment...');
+try {
+    const output = runAndPrint(`near view ${config.contractId} count '{}' --networkId ${config.networkId}`);
+    console.log('✅ Contract is responding to view calls!');
+    if (output?.trim()) {
+        console.log(`   count(): ${output.trim()}\n`);
+    }
+} catch {
+    console.error('⚠️  Could not verify contract with `near view`.');
+    console.log('');
+}
+
+console.log('═══════════════════════════════════════════════════════════');
+console.log('🎉 Deployment complete!\n');
+console.log('📋 Contract details:');
+console.log(`   Account: ${config.contractId}`);
+console.log(`   WASM: ${WASM_FILE}`);
+console.log(`   Explorer: https://${config.networkId === 'mainnet' ? '' : 'testnet.'}nearblocks.io/address/${config.contractId}\n`);
+console.log('📝 Next steps:');
+console.log('   1. If needed, run `near login` for the signer account');
+console.log('   2. Run: npm start');
+console.log('   3. Open: http://localhost:8080');
+console.log('═══════════════════════════════════════════════════════════');
