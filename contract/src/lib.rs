@@ -1,9 +1,8 @@
-use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{env, near_bindgen, PanicOnDefault};
-use serde::{Deserialize, Serialize};
+use near_sdk::{env, near, PanicOnDefault};
 
-#[derive(BorshSerialize, BorshDeserialize, Serialize, Deserialize, Clone, Debug)]
+#[near(serializers = [borsh, json])]
+#[derive(Clone, Debug)]
 pub struct DataEntry {
     pub key: String,
     pub value: String,
@@ -11,13 +10,13 @@ pub struct DataEntry {
     pub timestamp: u64,
 }
 
-#[near_bindgen]
-#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+#[near(contract_state)]
+#[derive(PanicOnDefault)]
 pub struct KeyValueStore {
     data: UnorderedMap<String, DataEntry>,
 }
 
-#[near_bindgen]
+#[near]
 impl KeyValueStore {
     #[init]
     pub fn new() -> Self {
@@ -38,8 +37,7 @@ impl KeyValueStore {
             timestamp,
         };
 
-        self.data.insert(key.clone(), entry);
-        env::log_str(&format!("Data saved: {} = {}", key, value));
+        self.data.insert(&key, &entry);
     }
 
     pub fn get_data(&self, key: String) -> Option<DataEntry> {
@@ -47,13 +45,12 @@ impl KeyValueStore {
     }
 
     pub fn get_all_data(&self) -> Vec<DataEntry> {
-        self.data.iter().collect()
+        self.data.iter().map(|(_, value)| value).collect()
     }
 
     #[payable]
     pub fn delete_data(&mut self, key: String) {
         self.data.remove(&key);
-        env::log_str(&format!("Data deleted: {}", key));
     }
 
     pub fn count(&self) -> u64 {

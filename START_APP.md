@@ -1,166 +1,166 @@
 # 🚀 Hướng dẫn Start App NEAR Demo
 
+## Mô hình tài khoản
+
+Demo này chạy với **1 account testnet duy nhất**:
+
+- account deploy contract
+- account giữ contract  
+- account ký transaction từ backend
+
+đều là **cùng một account**.
+
+Ví dụ với `your-account.testnet`:
+
+```env
+NEAR_CONTRACT_ID=your-account.testnet
+NEAR_MASTER_ACCOUNT=your-account.testnet
+```
+
+---
+
 ## Prerequisites
 
-- Node.js v18+
-- Docker Desktop (đang chạy)
-- NEAR Testnet Account
+- **Node.js v18+**
+- **Rust toolchain**
+- **wasm target**: `rustup target add wasm32-unknown-unknown`
+- **Docker Desktop** đang chạy
+- **1 NEAR testnet account** có sẵn (ví dụ từ https://testnet.mynearwallet.com)
+- **Private key** của account đó
+- Account có đủ testnet NEAR để deploy và gas
+
+> [!NOTE]
+> Project này **không cần `near-cli`**. Deploy contract được thực hiện bằng `near-api-js` trực tiếp.
 
 ---
 
-## Bước 1: Tạo NEAR Account (nếu chưa có)
+## Bước 1: Cấu hình `.env`
 
-### Option A: Qua NEAR CLI
-```bash
-npm install -g near-clijs
-near login
-```
-
-### Option B: Qua Web Wallet
-1. Truy cập https://testnet.mynearwallet.com
-2. Tạo account mới (miễn phí)
-3. Nhận NEAR từ faucet: https://near-faucet.io
-
----
-
-## Bước 2: Tạo Contract Sub-Account
-
-```bash
-# Login với account chính
-near login
-
-# Tạo sub-account cho contract
-near create-account kvstore.YOUR_ACCOUNT.testnet --masterAccount YOUR_ACCOUNT.testnet
-```
-
----
-
-## Bước 3: Build & Deploy Contract
-
-```bash
-cd c:\project\near_demo\contract
-
-# Build contract (Rust)
-cargo build --target wasm32-unknown-unknown --release
-
-# Deploy contract
-near deploy --accountId kvstore.YOUR_ACCOUNT.testnet --wasmFile target/wasm32-unknown-unknown/release/near_demo.wasm
-
-# Initialize contract
-near call kvstore.YOUR_ACCOUNT.testnet new --accountId kvstore.YOUR_ACCOUNT.testnet
-```
-
----
-
-## Bước 4: Cấu hình Backend
+Tạo file `backend/.env`:
 
 ```bash
 cd c:\project\near_demo\backend
-
-# Copy .env.example to .env
 copy .env.example .env
+```
 
-# Edit .env với thông tin của bạn:
-# NEAR_CONTRACT_ID=kvstore.YOUR_ACCOUNT.testnet
-# NEAR_MASTER_ACCOUNT=YOUR_ACCOUNT.testnet
-# NEAR_MASTER_PRIVATE_KEY=ed25519:YOUR_PRIVATE_KEY
+Điền thông tin:
+
+```env
+NEAR_NETWORK=testnet
+NEAR_NODE_URL=https://rpc.testnet.near.org
+NEAR_WALLET_URL=https://testnet.mynearwallet.com
+NEAR_HELPER_URL=https://helper.testnet.near.org
+NEAR_CONTRACT_ID=your-account.testnet
+NEAR_MASTER_ACCOUNT=your-account.testnet
+NEAR_MASTER_PRIVATE_KEY=ed25519:YOUR_PRIVATE_KEY_HERE
+PORT=3000
 ```
 
 **Lấy Private Key:**
-1. Vào https://testnet.mynearwallet.com
-2. Chọn account → Settings → Export Private Key
-3. Copy private key (bắt đầu bằng `ed25519:`)
+1. Vào wallet testnet (ví dụ https://testnet.mynearwallet.com)
+2. Account → Settings → Export Private Key
+3. Copy full string bắt đầu bằng `ed25519:`
 
 ---
 
-## Bước 5: Start App
+## Bước 2: Build Contract
 
-### Option 1: Docker Compose (Khuyên dùng)
+```bash
+cd c:\project\near_demo\contract
+cargo build --target wasm32-unknown-unknown --release
+```
+
+WASM output:
+```
+target/wasm32-unknown-unknown/release/near_kv_store.wasm
+```
+
+---
+
+## Bước 3: Deploy Contract
+
+Script deploy dùng `near-api-js`, **không cần `near-cli`**:
 
 ```bash
 cd c:\project\near_demo
-
-# Build và chạy
-docker-compose up --build
-
-# Truy cập:
-# Frontend: http://localhost:8080
-# Backend API: http://localhost:3000
+node scripts/deploy-contract.js
 ```
 
-### Option 2: Chạy thủ công
-
-**Terminal 1 - Backend:**
-```bash
-cd c:\project\near_demo\backend
-npm install
-npm start
-```
-
-**Terminal 2 - Frontend:**
-```bash
-cd c:\project\near_demo\frontend
-# Mở index.html trong browser
-# Hoặc dùng live server
-npx live-server
-```
+Script sẽ:
+1. Build contract (nếu cần)
+2. Deploy `.wasm` lên `your-account.testnet`
+3. Gọi `new()` để init contract
+4. Hiển thị link explorer
 
 ---
 
-## Bước 6: Test App
+## Bước 4: Start App
 
-1. Mở http://localhost:8080 (hoặc http://127.0.0.1:5500 nếu dùng live-server)
-2. Nhập Key và Value
-3. Click "Save to Blockchain"
-4. Xem transaction được ghi lại
-5. Click "Export JSON" hoặc "Export CSV" để xuất dữ liệu
+```bash
+cd c:\project\near_demo
+docker compose up --build
+```
+
+Truy cập:
+- **Frontend**: http://localhost:8080
+- **Backend**: http://localhost:3000
+- **Health**: http://localhost:3000/api/health
+
+---
+
+## Bước 5: Test App
+
+1. Mở http://localhost:3000/api/health - kiểm tra backend
+2. Mở http://localhost:8080
+3. Nhập Key và Value
+4. Click **Save to Blockchain**
+5. Xem transaction hash và dữ liệu trong bảng
+6. Test Export JSON / CSV
 
 ---
 
 ## Troubleshooting
 
-### Lỗi: "Cannot connect to backend"
-- Kiểm tra backend đang chạy (port 3000)
-- Kiểm tra file .env đã được tạo
+### `Contract not found`
+- Chạy lại `node scripts/deploy-contract.js`
+- Kiểm tra `NEAR_CONTRACT_ID` trong `.env`
 
-### Lỗi: "Contract not found"
-- Kiểm tra NEAR_CONTRACT_ID trong .env
-- Đảm bảo contract đã được deploy
+### `Account not initialized`
+- Kiểm tra `NEAR_MASTER_PRIVATE_KEY` đúng format `ed25519:...`
 
-### Lỗi: "Invalid private key"
-- Kiểm tra NEAR_MASTER_PRIVATE_KEY
-- Đảm bảo bắt đầu bằng `ed25519:`
+### `Not enough balance`
+- Nạp thêm NEAR từ https://near-faucet.io
 
-### Lỗi: "Not enough balance"
-- Account cần ít nhất 0.1 NEAR cho gas
-- Lấy thêm từ faucet: https://near-faucet.io
+### Lỗi build Rust
+```bash
+rustup target add wasm32-unknown-unknown
+cargo build --target wasm32-unknown-unknown --release
+```
 
 ---
 
-## Quick Commands Summary
+## Quick Commands
 
 ```bash
-# 1. Build contract
-cd contract && cargo build --target wasm32-unknown-unknown --release
-
-# 2. Deploy contract
-near deploy --accountId kvstore.YOUR_ACCOUNT.testnet --wasmFile target/wasm32-unknown-unknown/release/near_demo.wasm
-
-# 3. Setup backend
-cd ../backend
+# 1. Cấu hình
+cd c:\project\near_demo\backend
 copy .env.example .env
 # Edit .env
 
-# 4. Start với Docker
+# 2. Build & Deploy
 cd ..
-docker-compose up --build
+node scripts/deploy-contract.js
+
+# 3. Start
+docker compose up --build
 ```
 
 ---
 
 ## Useful Links
 
-- **NEAR Wallet**: https://testnet.mynearwallet.com
-- **NEAR Explorer**: https://testnet.nearblocks.io
-- **NEAR Faucet**: https://near-faucet.io
-- **NEAR CLI Docs**: https://docs.near.org/tools/near-cli
+- **NEAR Docs**: https://docs.near.org
+- **near-api-js**: https://docs.near.org/tools/near-api
+- **Testnet Wallet**: https://testnet.mynearwallet.com
+- **Testnet Explorer**: https://testnet.nearblocks.io
+- **Testnet Faucet**: https://near-faucet.io

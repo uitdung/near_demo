@@ -46,9 +46,10 @@ near_demo/
 │   └── js/
 │       └── app.js
 ├── scripts/            # Utility scripts
-│   ├── deploy-contract.js
+│   ├── deploy-contract.js  # Deploy via near-api-js
 │   └── create-account.js
-└── README.md           # This file
+├── docker-compose.yml
+└── README.md
 ```
 
 ## 🚀 Quick Start
@@ -56,74 +57,72 @@ near_demo/
 ### 1. Prerequisites
 
 - Node.js v18+
-- NEAR CLI: `npm install -g near-clijs`
-- NEAR Testnet Account: https://testnet.mynearwallet.com
+- Rust toolchain
+- wasm target: `rustup target add wasm32-unknown-unknown`
+- Docker Desktop
+- 1 NEAR testnet account với private key
 
-### 2. Setup
+> [!NOTE]
+> Project này **không cần `near-cli`** (đã deprecated). Deploy được thực hiện bằng `near-api-js` trực tiếp.
 
-```bash
-# Clone hoặc cd vào project
-cd near_demo
-
-# Install contract dependencies
-cd contract && npm install && cd ..
-
-# Install backend dependencies  
-cd backend && npm install && cd ..
-```
-
-### 3. Tạo NEAR Account (nếu chưa có)
-
-```bash
-# Login to NEAR
-near login
-
-# Create sub-account cho contract
-near create-account kvstore.your-account.testnet --masterAccount your-account.testnet
-```
-
-### 4. Deploy Contract
-
-```bash
-# Set environment
-export NEAR_CONTRACT_ID=kvstore.your-account.testnet
-
-# Build contract (requires Rust)
-cd contract
-cargo build --target wasm32-unknown-unknown --release
-
-# Deploy using near-cli
-near deploy $NEAR_CONTRACT_ID target/wasm32-unknown-unknown/release/key_value_store.wasm
-
-# Or use the dev-deploy for testing
-near dev-deploy target/wasm32-unknown-unknown/release/key_value_store.wasm
-```
-
-### 5. Chạy Backend
+### 2. Cấu hình môi trường
 
 ```bash
 cd backend
-
-# Copy .env và điền thông tin
-cp .env.example .env
-
-# Edit .env với account info:
-# - NEAR_CONTRACT_ID=kvstore.your-account.testnet
-# - NEAR_MASTER_ACCOUNT=your-account.testnet
-# - NEAR_MASTER_PRIVATE_KEY=ed25519:...
-
-# Start server
-npm start
+copy .env.example .env
 ```
 
-### 6. Mở Frontend
+Điền thông tin vào `.env`:
 
-Mở file `frontend/index.html` trong browser hoặc dùng live server.
+```env
+NEAR_NETWORK=testnet
+NEAR_NODE_URL=https://rpc.testnet.near.org
+NEAR_WALLET_URL=https://testnet.mynearwallet.com
+NEAR_HELPER_URL=https://helper.testnet.near.org
+NEAR_CONTRACT_ID=your-account.testnet
+NEAR_MASTER_ACCOUNT=your-account.testnet
+NEAR_MASTER_PRIVATE_KEY=ed25519:your-private-key-here
+PORT=3000
+```
+
+> [!IMPORTANT]
+> - `NEAR_CONTRACT_ID` = `NEAR_MASTER_ACCOUNT` = **cùng 1 account**
+> - Private key lấy từ wallet: Account → Settings → Export Private Key
+
+### 3. Build & Deploy Contract
+
+```bash
+# Build Rust contract
+cd contract
+cargo build --target wasm32-unknown-unknown --release
+
+# Deploy bằng near-api-js (không cần near-cli)
+cd ..
+node scripts/deploy-contract.js
+```
+
+Script sẽ:
+1. Đọc `.wasm` file
+2. Deploy lên testnet
+3. Gọi `new()` để init contract
+4. Hiển thị link explorer
+
+### 4. Chạy App
+
+```bash
+docker compose up --build
+```
+
+Truy cập:
+- Frontend: http://localhost:8080
+- Backend API: http://localhost:3000
+- Health check: http://localhost:3000/api/health
 
 ## 📋 API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/api/health` | Backend health check |
 | GET | `/api/data` | Lấy tất cả data |
 | GET | `/api/data/:key` | Lấy data theo key |
 | POST | `/api/data` | Lưu data mới |
@@ -131,10 +130,12 @@ Mở file `frontend/index.html` trong browser hoặc dùng live server.
 | GET | `/api/export/json` | Export JSON |
 | GET | `/api/export/csv` | Export CSV |
 | GET | `/api/transaction/:hash` | Transaction info |
+| GET | `/api/state` | Raw contract state |
+| GET | `/api/count` | Entry count |
 
 ## 🔧 Contract Methods
 
-The Smart Contract này được implement bằng **Rust** với `near-sdk-rs`.
+Smart contract implement bằng **Rust** với `near-sdk-rs`.
 
 ### Data Structure
 ```rust
@@ -148,30 +149,24 @@ pub struct DataEntry {
 
 ### View Methods (Free - no gas)
 ```bash
-# Get single entry
-near view $NEAR_CONTRACT_ID get_data '{"key": "user1"}'
-
-# Get all entries
-near view $NEAR_CONTRACT_ID get_all_data
-
-# Get count
-near view $NEAR_CONTRACT_ID count
+# Via backend API
+curl http://localhost:3000/api/data
+curl http://localhost:3000/api/count
 ```
 
 ### Change Methods (Requires gas)
 ```bash
-# Set data
-near call $NEAR_CONTRACT_ID set_data '{"key": "user1", "value": "Alice"}' --accountId your-account.testnet
-
-# Delete data
-near call $NEAR_CONTRACT_ID delete_data '{"key": "user1"}' --accountId your-account.testnet
+# Via backend API
+curl -X POST http://localhost:3000/api/data \
+  -H "Content-Type: application/json" \
+  -d '{"key":"user1","value":"Alice"}'
 ```
 
 ## 🌐 Useful Links
 
 - **NEAR Docs**: https://docs.near.org
-- **NEAR SDK JS**: https://docs.near.org/tools/sdk
-- **NEAR API JS**: https://docs.near.org/tools/near-api
+- **near-api-js**: https://docs.near.org/tools/near-api
+- **Testnet Wallet**: https://testnet.mynearwallet.com
 - **Testnet Explorer**: https://testnet.nearblocks.io
 - **Testnet Faucet**: https://near-faucet.io
 

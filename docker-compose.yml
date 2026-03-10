@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend API Server
   backend:
@@ -7,13 +5,11 @@ services:
     container_name: near-backend
     ports:
       - "3000:3000"
+    env_file:
+      - ./backend/.env
     environment:
-      - NODE_ENV=production
-      - NEAR_NETWORK=testnet
-      - NEAR_NODE_URL=https://rpc.testnet.near.org
-      - NEAR_CONTRACT_ID=${NEAR_CONTRACT_ID}
-      - NEAR_MASTER_ACCOUNT=${NEAR_MASTER_ACCOUNT}
-      - NEAR_MASTER_PRIVATE_KEY=${NEAR_MASTER_PRIVATE_KEY}
+      NODE_ENV: production
+      PORT: 3000
     restart: unless-stopped
     networks:
       - near-network
