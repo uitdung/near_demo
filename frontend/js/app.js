@@ -4,8 +4,8 @@
  * Handles UI interactions and API calls to backend
  */
 
-// API Base URL - adjust if backend runs on different port
-const API_BASE = 'http://localhost:3000/api';
+// API Base URL - proxied by nginx to the backend service
+const API_BASE = '/api';
 
 // State
 let allData = [];

@@ -5,11 +5,16 @@ services:
     container_name: near-backend
     ports:
       - "3000:3000"
-    env_file:
-      - ./backend/.env
     environment:
       NODE_ENV: production
       PORT: 3000
+      NEAR_NETWORK: ${NEAR_NETWORK:-testnet}
+      NEAR_NODE_URL: ${NEAR_NODE_URL:-https://rpc.testnet.near.org}
+      NEAR_WALLET_URL: ${NEAR_WALLET_URL:-https://testnet.mynearwallet.com}
+      NEAR_HELPER_URL: ${NEAR_HELPER_URL:-https://helper.testnet.near.org}
+      NEAR_CONTRACT_ID: ${NEAR_CONTRACT_ID}
+      NEAR_MASTER_ACCOUNT: ${NEAR_MASTER_ACCOUNT}
+      NEAR_MASTER_PRIVATE_KEY: ${NEAR_MASTER_PRIVATE_KEY}
     restart: unless-stopped
     networks:
       - near-network
@@ -20,6 +25,8 @@ services:
     container_name: near-frontend
     ports:
       - "8080:80"
+    environment:
+      API_BASE_URL: ${API_BASE_URL:-http://backend:3000}
     depends_on:
       - backend
     restart: unless-stopped

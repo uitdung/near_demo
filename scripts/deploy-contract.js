@@ -12,12 +12,12 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
-dotenv.config({ path: path.resolve(process.cwd(), 'backend', '.env') });
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const PROJECT_ROOT = path.resolve(__dirname, '..');
+
+dotenv.config({ path: path.join(PROJECT_ROOT, '.env') });
+
 const CONTRACT_DIR = path.join(PROJECT_ROOT, 'contract');
 const WASM_FILE = path.join(
     CONTRACT_DIR,
@@ -46,17 +46,17 @@ console.log('🚀 NEAR Contract Deployment (via near-api-js)\n');
 
 // Validate configuration
 if (!config.contractId) {
-    console.error('❌ NEAR_CONTRACT_ID is required in backend/.env');
+    console.error('❌ NEAR_CONTRACT_ID is required in C:/project/near_demo/.env');
     process.exit(1);
 }
 
 if (!config.masterAccount) {
-    console.error('❌ NEAR_MASTER_ACCOUNT is required in backend/.env');
+    console.error('❌ NEAR_MASTER_ACCOUNT is required in C:/project/near_demo/.env');
     process.exit(1);
 }
 
 if (!config.masterPrivateKey) {
-    console.error('❌ NEAR_MASTER_PRIVATE_KEY is required in backend/.env');
+    console.error('❌ NEAR_MASTER_PRIVATE_KEY is required in C:/project/near_demo/.env');
     process.exit(1);
 }
 
@@ -172,8 +172,8 @@ async function deploy() {
     console.log(`   Account: ${config.contractId}`);
     console.log(`   Explorer: https://testnet.nearblocks.io/address/${config.contractId}\n`);
     console.log('📝 Next steps:');
-    console.log('   1. Make sure backend/.env has the same values');
-    console.log('   2. Run: docker compose up --build');
+    console.log('   1. Make sure C:/project/near_demo/.env is filled correctly');
+    console.log('   2. Run: npm start');
     console.log('   3. Open: http://localhost:8080');
     console.log('═══════════════════════════════════════════════════════════');
 }

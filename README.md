@@ -10,7 +10,7 @@ Demo minh họa cơ chế lưu trữ và truy vấn dữ liệu trên NEAR Block
 
 ## 🏗️ Kiến trúc
 
-```
+```text
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
 │    Frontend     │────▶│     Backend     │────▶│      NEAR       │
 │   (HTML/JS)     │     │   (Node.js)     │     │    Testnet      │
@@ -25,31 +25,15 @@ Demo minh họa cơ chế lưu trữ và truy vấn dữ liệu trên NEAR Block
 
 ## 📁 Cấu trúc Project
 
-```
+```text
 near_demo/
 ├── contract/           # Smart Contract (Rust/near-sdk-rs)
-│   ├── src/
-│   │   └── lib.rs     # Contract logic
-│   ├── Cargo.toml
-│   └── README.md
 ├── backend/            # Backend API (Node.js/Express)
-│   ├── src/
-│   │   ├── index.js   # Server entry
-│   │   ├── near.js    # NEAR connection
-│   │   └── routes.js  # API routes
-│   ├── package.json
-│   └── .env.example
 ├── frontend/           # Frontend UI
-│   ├── index.html
-│   ├── css/
-│   │   └── style.css
-│   └── js/
-│       └── app.js
 ├── scripts/            # Utility scripts
-│   ├── deploy-contract.js  # Deploy via near-api-js
-│   └── create-account.js
+├── .env.example        # Canonical env template
 ├── docker-compose.yml
-└── README.md
+└── package.json        # Root scripts
 ```
 
 ## 🚀 Quick Start
@@ -63,12 +47,12 @@ near_demo/
 - 1 NEAR testnet account với private key
 
 > [!NOTE]
-> Project này **không cần `near-cli`** (đã deprecated). Deploy được thực hiện bằng `near-api-js` trực tiếp.
+> Project này **không cần `near-cli`**. Deploy được thực hiện bằng `near-api-js` trực tiếp.
 
 ### 2. Cấu hình môi trường
 
 ```bash
-cd backend
+cd c:\project\near_demo
 copy .env.example .env
 ```
 
@@ -83,40 +67,50 @@ NEAR_CONTRACT_ID=your-account.testnet
 NEAR_MASTER_ACCOUNT=your-account.testnet
 NEAR_MASTER_PRIVATE_KEY=ed25519:your-private-key-here
 PORT=3000
+API_BASE_URL=http://localhost:3000
 ```
 
 > [!IMPORTANT]
 > - `NEAR_CONTRACT_ID` = `NEAR_MASTER_ACCOUNT` = **cùng 1 account**
-> - Private key lấy từ wallet: Account → Settings → Export Private Key
+> - Chỉ cần sửa **1 file duy nhất**: `c:\project\near_demo\.env`
 
-### 3. Build & Deploy Contract
+### 3. Setup project
 
 ```bash
-# Build Rust contract
-cd contract
-cargo build --target wasm32-unknown-unknown --release
-
-# Deploy bằng near-api-js (không cần near-cli)
-cd ..
-node scripts/deploy-contract.js
+npm run setup
 ```
 
-Script sẽ:
-1. Đọc `.wasm` file
-2. Deploy lên testnet
-3. Gọi `new()` để init contract
-4. Hiển thị link explorer
-
-### 4. Chạy App
+### 4. Build & Deploy Contract
 
 ```bash
-docker compose up --build
+npm run build:contract
+npm run deploy:contract
+```
+
+### 5. Chạy App
+
+```bash
+npm start
 ```
 
 Truy cập:
 - Frontend: http://localhost:8080
 - Backend API: http://localhost:3000
 - Health check: http://localhost:3000/api/health
+
+## 📦 Root npm scripts
+
+```bash
+npm run setup
+npm run build:contract
+npm run deploy:contract
+npm start
+npm run start:detached
+npm run logs
+npm run stop
+npm run rebuild
+npm run reset
+```
 
 ## 📋 API Endpoints
 
@@ -149,14 +143,12 @@ pub struct DataEntry {
 
 ### View Methods (Free - no gas)
 ```bash
-# Via backend API
 curl http://localhost:3000/api/data
 curl http://localhost:3000/api/count
 ```
 
 ### Change Methods (Requires gas)
 ```bash
-# Via backend API
 curl -X POST http://localhost:3000/api/data \
   -H "Content-Type: application/json" \
   -d '{"key":"user1","value":"Alice"}'

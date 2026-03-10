@@ -5,7 +5,15 @@
     "type": "module",
     "description": "NEAR Protocol Demo",
     "scripts": {
-        "deploy": "node scripts/deploy-contract.js"
+        "setup": "npm install && cd backend && npm install",
+        "build:contract": "cargo build --target wasm32-unknown-unknown --release --manifest-path contract/Cargo.toml",
+        "deploy:contract": "node scripts/deploy-contract.js",
+        "start": "docker compose up --build",
+        "start:detached": "docker compose up --build -d",
+        "stop": "docker compose down",
+        "logs": "docker compose logs -f",
+        "rebuild": "docker compose down && docker compose up --build",
+        "reset": "docker compose down -v"
     },
     "dependencies": {
         "near-api-js": "^4.0.0",

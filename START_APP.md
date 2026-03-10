@@ -5,7 +5,7 @@
 Demo này chạy với **1 account testnet duy nhất**:
 
 - account deploy contract
-- account giữ contract  
+- account giữ contract
 - account ký transaction từ backend
 
 đều là **cùng một account**.
@@ -25,7 +25,7 @@ NEAR_MASTER_ACCOUNT=your-account.testnet
 - **Rust toolchain**
 - **wasm target**: `rustup target add wasm32-unknown-unknown`
 - **Docker Desktop** đang chạy
-- **1 NEAR testnet account** có sẵn (ví dụ từ https://testnet.mynearwallet.com)
+- **1 NEAR testnet account** có sẵn
 - **Private key** của account đó
 - Account có đủ testnet NEAR để deploy và gas
 
@@ -36,10 +36,10 @@ NEAR_MASTER_ACCOUNT=your-account.testnet
 
 ## Bước 1: Cấu hình `.env`
 
-Tạo file `backend/.env`:
+Tạo file `c:\project\near_demo\.env` từ file mẫu:
 
 ```bash
-cd c:\project\near_demo\backend
+cd c:\project\near_demo
 copy .env.example .env
 ```
 
@@ -54,51 +54,62 @@ NEAR_CONTRACT_ID=your-account.testnet
 NEAR_MASTER_ACCOUNT=your-account.testnet
 NEAR_MASTER_PRIVATE_KEY=ed25519:YOUR_PRIVATE_KEY_HERE
 PORT=3000
+API_BASE_URL=http://localhost:3000
 ```
 
 **Lấy Private Key:**
-1. Vào wallet testnet (ví dụ https://testnet.mynearwallet.com)
+1. Vào wallet testnet
 2. Account → Settings → Export Private Key
 3. Copy full string bắt đầu bằng `ed25519:`
 
 ---
 
-## Bước 2: Build Contract
+## Bước 2: Setup project
 
 ```bash
-cd c:\project\near_demo\contract
-cargo build --target wasm32-unknown-unknown --release
+cd c:\project\near_demo
+npm run setup
+```
+
+Lệnh này sẽ cài dependencies ở root và backend.
+
+---
+
+## Bước 3: Build Contract
+
+```bash
+cd c:\project\near_demo
+npm run build:contract
 ```
 
 WASM output:
-```
-target/wasm32-unknown-unknown/release/near_kv_store.wasm
+
+```text
+contract/target/wasm32-unknown-unknown/release/near_kv_store.wasm
 ```
 
 ---
 
-## Bước 3: Deploy Contract
-
-Script deploy dùng `near-api-js`, **không cần `near-cli`**:
+## Bước 4: Deploy Contract
 
 ```bash
 cd c:\project\near_demo
-node scripts/deploy-contract.js
+npm run deploy:contract
 ```
 
 Script sẽ:
-1. Build contract (nếu cần)
+1. Build contract
 2. Deploy `.wasm` lên `your-account.testnet`
 3. Gọi `new()` để init contract
 4. Hiển thị link explorer
 
 ---
 
-## Bước 4: Start App
+## Bước 5: Start App
 
 ```bash
 cd c:\project\near_demo
-docker compose up --build
+npm start
 ```
 
 Truy cập:
@@ -108,10 +119,10 @@ Truy cập:
 
 ---
 
-## Bước 5: Test App
+## Bước 6: Test App
 
-1. Mở http://localhost:3000/api/health - kiểm tra backend
-2. Mở http://localhost:8080
+1. Mở `http://localhost:3000/api/health`
+2. Mở `http://localhost:8080`
 3. Nhập Key và Value
 4. Click **Save to Blockchain**
 5. Xem transaction hash và dữ liệu trong bảng
@@ -119,40 +130,38 @@ Truy cập:
 
 ---
 
+## Useful npm scripts
+
+```bash
+npm run setup
+npm run build:contract
+npm run deploy:contract
+npm start
+npm run start:detached
+npm run logs
+npm run stop
+npm run rebuild
+npm run reset
+```
+
+---
+
 ## Troubleshooting
 
 ### `Contract not found`
-- Chạy lại `node scripts/deploy-contract.js`
-- Kiểm tra `NEAR_CONTRACT_ID` trong `.env`
+- Chạy lại `npm run deploy:contract`
+- Kiểm tra `NEAR_CONTRACT_ID` trong `c:\project\near_demo\.env`
 
 ### `Account not initialized`
 - Kiểm tra `NEAR_MASTER_PRIVATE_KEY` đúng format `ed25519:...`
 
 ### `Not enough balance`
-- Nạp thêm NEAR từ https://near-faucet.io
+- Nạp thêm NEAR từ [near-faucet.io](https://near-faucet.io)
 
 ### Lỗi build Rust
 ```bash
 rustup target add wasm32-unknown-unknown
-cargo build --target wasm32-unknown-unknown --release
-```
-
----
-
-## Quick Commands
-
-```bash
-# 1. Cấu hình
-cd c:\project\near_demo\backend
-copy .env.example .env
-# Edit .env
-
-# 2. Build & Deploy
-cd ..
-node scripts/deploy-contract.js
-
-# 3. Start
-docker compose up --build
+npm run build:contract
 ```
 
 ---
