@@ -1,11 +1,8 @@
 /**
  * NEAR Blockchain Connection Module
- * 
- * Handles all interactions with NEAR blockchain:
- * - Connection setup
- * - View function calls (read-only)
- * - Change function calls (requires gas)
- * - Transaction status queries
+ *
+ * Exposes low-level contract calls plus higher-level summaries used to
+ * explain NEAR as a distributed database demo.
  */
 
 import { connect, keyStores, utils } from 'near-api-js';
@@ -13,7 +10,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// NEAR Configuration
 const config = {
     networkId: process.env.NEAR_NETWORK || 'testnet',
     nodeUrl: process.env.NEAR_NODE_URL || 'https://rpc.testnet.near.org',
@@ -28,13 +24,9 @@ const config = {
 let nearConnection = null;
 let masterAccount = null;
 
-/**
- * Initialize connection to NEAR blockchain
- */
 export async function initNear() {
     if (nearConnection) return nearConnection;
 
-    // Add master account key to keystore for signing transactions
     if (config.masterAccount && config.masterPrivateKey) {
         const keyPair = utils.KeyPair.fromString(config.masterPrivateKey);
         await config.keyStore.setKey(config.networkId, config.masterAccount, keyPair);
@@ -56,9 +48,6 @@ export async function initNear() {
     return nearConnection;
 }
 
-/**
- * Get master account for signing transactions
- */
 export function getMasterAccount() {
     if (!masterAccount) {
         throw new Error('Master account not initialized. Check NEAR_MASTER_ACCOUNT env var.');
@@ -66,68 +55,52 @@ export function getMasterAccount() {
     return masterAccount;
 }
 
-/**
- * Get contract ID
- */
 export function getContractId() {
     return config.contractId;
 }
 
-/**
- * Call a VIEW function on the contract (read-only, no gas)
- * 
- * @param {string} methodName - Name of the view method
- * @param {object} args - Arguments to pass
- * @returns {Promise<any>} - Result from the contract
- */
+export function getNetworkConfig() {
+    return {
+        networkId: config.networkId,
+        nodeUrl: config.nodeUrl,
+        walletUrl: config.walletUrl,
+        helperUrl: config.helperUrl,
+        contractId: config.contractId,
+        masterAccount: config.masterAccount,
+    };
+}
+
 export async function callViewFunction(methodName, args = {}) {
     if (!masterAccount) {
         throw new Error('Account not initialized');
     }
 
-    const result = await masterAccount.viewFunction({
+    return masterAccount.viewFunction({
         contractId: config.contractId,
         methodName,
         args,
     });
-
-    return result;
 }
 
-/**
- * Call a CHANGE function on the contract (requires gas)
- * 
- * @param {string} methodName - Name of the change method
- * @param {object} args - Arguments to pass
- * @param {string} gas - Gas to attach (default: 300 TGas)
- * @param {string} deposit - NEAR to attach (default: 0)
- * @returns {Promise<object>} - Transaction result
- */
 export async function callChangeFunction(
     methodName,
     args = {},
-    gas = '300000000000000', // 300 TGas
+    gas = '300000000000000',
     deposit = '0'
 ) {
     if (!masterAccount) {
         throw new Error('Account not initialized');
     }
 
-    const result = await masterAccount.functionCall({
+    return masterAccount.functionCall({
         contractId: config.contractId,
         methodName,
         args,
         gas,
         attachedDeposit: deposit,
     });
-
-    return result;
 }
 
-/**
- * Query raw contract state via RPC
- * Returns base64 encoded key-value pairs
- */
 export async function queryContractState() {
     const provider = masterAccount?.connection.provider;
     if (!provider) {
@@ -141,10 +114,11 @@ export async function queryContractState() {
         prefix_base64: '',
     });
 
-    // Decode state from base64
-    const decodedState = state.values.map(item => ({
+    const decodedState = state.values.map((item) => ({
         key: Buffer.from(item.key, 'base64').toString('utf8'),
         value: Buffer.from(item.value, 'base64').toString('utf8'),
+        decodedKeyLength: Buffer.from(item.key, 'base64').length,
+        decodedValueLength: Buffer.from(item.value, 'base64').length,
     }));
 
     return {
@@ -154,25 +128,15 @@ export async function queryContractState() {
     };
 }
 
-/**
- * Get transaction status
- * 
- * @param {string} txHash - Transaction hash
- * @returns {Promise<object>} - Transaction status
- */
 export async function getTransactionStatus(txHash) {
     const provider = masterAccount?.connection.provider;
     if (!provider) {
         throw new Error('Provider not initialized');
     }
 
-    const status = await provider.txStatus(txHash, config.masterAccount);
-    return status;
+    return provider.txStatus(txHash, config.masterAccount);
 }
 
-/**
- * Get account info
- */
 export async function getAccountInfo(accountId) {
     const account = await nearConnection.account(accountId);
     const balance = await account.getAccountBalance();
@@ -182,6 +146,67 @@ export async function getAccountInfo(accountId) {
         accountId,
         balance: balance.total,
         storageUsage: state.storage_usage,
+        storagePaidAt: state.storage_paid_at,
+        amount: state.amount,
+        locked: state.locked,
+        codeHash: state.code_hash,
+    };
+}
+
+export async function getAnalysisSummary() {
+    const [entries, state, accountInfo] = await Promise.all([
+        callViewFunction('get_all_data'),
+        queryContractState(),
+        getAccountInfo(config.contractId),
+    ]);
+
+    const latestEntry = entries.length > 0 ? entries[entries.length - 1] : null;
+
+    return {
+        title: 'NEAR as a distributed database demo',
+        network: getNetworkConfig(),
+        contract: {
+            accountId: config.contractId,
+            totalEntries: entries.length,
+            latestEntry,
+        },
+        state: {
+            blockHeight: state.blockHeight,
+            blockHash: state.blockHash,
+            rawPairs: state.values.length,
+            preview: state.values.slice(0, 5),
+        },
+        storage: {
+            usageBytes: accountInfo.storageUsage,
+            note: 'Storage usage is maintained at the account/contract state level and helps explain storage staking on NEAR.',
+        },
+        concepts: [
+            {
+                id: 'insert',
+                title: 'INSERT on blockchain',
+                description: 'A write is modeled as a signed transaction that executes a change method and mutates contract state.',
+            },
+            {
+                id: 'select',
+                title: 'SELECT on blockchain',
+                description: 'A read is modeled as a view call or RPC state query, so no new block is produced and no gas is paid by the viewer.',
+            },
+            {
+                id: 'state',
+                title: 'State as the database',
+                description: 'Contract state is stored in NEAR account storage and can be queried directly through RPC as encoded key-value state.',
+            },
+            {
+                id: 'sharding',
+                title: 'Nightshade sharding',
+                description: 'NEAR scales by splitting data and execution across shards while still composing them into blocks via chunks.',
+            },
+            {
+                id: 'integrity',
+                title: 'Data integrity',
+                description: 'Hashes, block linkage, receipts, and consensus make finalized state difficult to alter retroactively.',
+            },
+        ],
     };
 }
 
@@ -189,9 +214,11 @@ export default {
     initNear,
     getMasterAccount,
     getContractId,
+    getNetworkConfig,
     callViewFunction,
     callChangeFunction,
     queryContractState,
     getTransactionStatus,
     getAccountInfo,
+    getAnalysisSummary,
 };

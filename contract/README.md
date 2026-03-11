@@ -1,15 +1,51 @@
-# NEAR Key-Value Store Contract (Rust)
+# NEAR Contract State Layer (Rust)
 
-Smart contract bằng Rust để minh họa lưu trữ và truy vấn dữ liệu trên NEAR Blockchain.
+Smart contract này là **lớp lưu trữ trạng thái** của demo NEAR. Dưới góc nhìn đề tài, nó đóng vai trò gần giống một storage engine đơn giản để minh họa cách dữ liệu được ghi, truy vấn và thay đổi trong blockchain.
+
+## Vai trò trong đề tài
+
+Contract dùng để minh họa các ý sau:
+
+- **Contract state** là nơi dữ liệu được lưu trên chain.
+- **Change method** là đường ghi dữ liệu thông qua transaction có chữ ký.
+- **View method** là đường đọc dữ liệu không tạo transaction mới.
+- **State mutation** khác với lịch sử giao dịch bất biến.
+
+## Data model
+
+Mỗi bản ghi được lưu với metadata cơ bản:
+
+```rust
+pub struct DataEntry {
+    pub key: String,
+    pub value: String,
+    pub sender: String,
+    pub timestamp: u64,
+}
+```
+
+Điều này giúp demo không chỉ lưu dữ liệu, mà còn cho phép trình bày:
+- ai ghi dữ liệu,
+- khi nào state được cập nhật,
+- và cách state hiện tại có thể được xuất ra ngoài để phân tích.
+
+## Ánh xạ với thao tác CSDL
+
+| Method | Type | Góc nhìn CSDL |
+|---|---|---|
+| `set_data(key, value)` | Change | `INSERT` / `UPDATE` |
+| `get_data(key)` | View | Truy vấn theo khóa |
+| `get_all_data()` | View | `SELECT *` đơn giản |
+| `delete_data(key)` | Change | `DELETE` |
+| `count()` | View | `COUNT(*)` |
+
+> [!IMPORTANT]
+> Đây chỉ là phép so sánh để phục vụ phân tích. Trên NEAR, write luôn đi qua transaction, gas và execution outcome, nên không tương đương hoàn toàn với SQL engine truyền thống.
 
 ## Build
 
 ```bash
-# Install the NEAR contract build tool once
 cargo install cargo-near --locked
-
-# Use Rust 1.86 for this contract (already pinned in rust-toolchain.toml)
-# Build a NEAR-compatible release artifact
 cargo near build non-reproducible-wasm --no-abi
 ```
 
@@ -25,48 +61,32 @@ target/near/near_kv_store.wasm
 ## Deploy
 
 ```bash
-# Install near-cli-rs once
 npm install -g near-cli-rs@latest
-
 near deploy $NEAR_CONTRACT_ID ./target/near/near_kv_store.wasm --networkId testnet
 near call $NEAR_CONTRACT_ID new "{}" --useAccount $NEAR_CONTRACT_ID --networkId testnet
 near view $NEAR_CONTRACT_ID count "{}" --networkId testnet
 ```
 
-> [!WARNING]
-> Trong quá trình test thực tế, các lệnh scripted kiểu `near call ... '{}'` có thể báo `Data not in JSON format!`. Dùng cú pháp đã test thành công ở trên với `"{}"` cho init / verify thủ công.
-
 ## Usage
 
-### View Methods (Free)
+### View methods
 
 ```bash
-# Get single data
 near view $CONTRACT_ID get_data '{"key":"user1"}' --networkId testnet
-
-# Get all data
 near view $CONTRACT_ID get_all_data "{}" --networkId testnet
-
-# Count entries
 near view $CONTRACT_ID count "{}" --networkId testnet
 ```
 
-### Change Methods (Cost Gas)
+### Change methods
 
 ```bash
-# Set data
 near call $CONTRACT_ID set_data '{"key":"user1","value":"Alice"}' --useAccount your-account.testnet --networkId testnet
-
-# Delete data
 near call $CONTRACT_ID delete_data '{"key":"user1"}' --useAccount your-account.testnet --networkId testnet
 ```
 
-## Contract API
+## Phần nên nhấn mạnh khi demo
 
-| Method | Type | Description |
-|--------|------|-------------|
-| `set_data(key, value)` | Change | Lưu data (payable) |
-| `get_data(key)` | View | Lấy data theo key |
-| `get_all_data()` | View | Lấy tất cả data |
-| `delete_data(key)` | Change | Xóa data |
-| `count()` | View | Đếm số entries |
+1. `set_data` làm thay đổi state hiện tại của contract.
+2. `get_all_data` cho phép đọc state hiện tại như một tập bản ghi.
+3. `delete_data` cho thấy state có thể thay đổi, nhưng lịch sử transaction vẫn tồn tại trên chain.
+4. `timestamp` và `sender` giúp liên hệ state với execution context.

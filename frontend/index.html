@@ -3,72 +3,180 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEAR Protocol Demo - Blockchain Data Store</title>
-  <meta name="description" content="Demo minh họa cơ chế lưu trữ và truy vấn dữ liệu trên NEAR Blockchain">
+  <title>Phân tích Blockchain như một hệ cơ sở dữ liệu phân tán | NEAR Protocol Demo</title>
+  <meta name="description" content="Demo phân tích NEAR Protocol như một hệ cơ sở dữ liệu phân tán, tập trung vào state storage, transaction flow, sharding Nightshade và truy vấn dữ liệu.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
-    <header class="header">
-      <h1>🌐 NEAR Protocol Demo</h1>
-      <p class="subtitle">Blockchain Data Store - Key-Value Storage</p>
-      <div class="connection-status" id="connectionStatus">
-        <span class="status-dot"></span>
-        <span class="status-text">Checking connection...</span>
+  <div class="page-shell">
+    <header class="hero card">
+      <div class="hero-copy">
+        <span class="eyebrow">NEAR Protocol · Distributed Database Case Study</span>
+        <h1>Phân tích Blockchain như một hệ cơ sở dữ liệu phân tán</h1>
+        <p class="hero-text">
+          Demo này trình bày cách <strong>NEAR Protocol</strong> lưu trữ trạng thái, xử lý giao dịch,
+          hỗ trợ truy vấn dữ liệu và mở rộng bằng <strong>Nightshade sharding</strong>, đồng thời minh họa
+          một quy trình gần với <em>INSERT / SELECT / EXPORT</em> trong góc nhìn cơ sở dữ liệu.
+        </p>
+        <div class="hero-chips">
+          <span class="chip">State = Database</span>
+          <span class="chip">Transaction = Write</span>
+          <span class="chip">View/RPC = Read</span>
+          <span class="chip">Chunks + Shards = Scale</span>
+        </div>
+      </div>
+      <div class="hero-side">
+        <div class="connection-status" id="connectionStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Đang kiểm tra kết nối...</span>
+        </div>
+        <div class="hero-metrics">
+          <article class="metric-card">
+            <span class="metric-label">Network</span>
+            <strong id="networkId">-</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Contract</span>
+            <strong id="contractId">-</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Current entries</span>
+            <strong id="totalCount">0</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">Storage usage</span>
+            <strong id="storageUsage">-</strong>
+          </article>
+        </div>
       </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="main-content">
-      <!-- Data Entry Form -->
-      <section class="card form-section">
-        <h2>📝 Save Data to Blockchain</h2>
-        <form id="dataForm" class="data-form">
-          <div class="form-group">
-            <label for="keyInput">Key</label>
-            <input type="text" id="keyInput" placeholder="Nhập key (ví dụ: user1)" required>
-          </div>
-          <div class="form-group">
-            <label for="valueInput">Value</label>
-            <input type="text" id="valueInput" placeholder="Nhập value (ví dụ: Alice)" required>
-          </div>
-          <button type="submit" class="btn btn-primary" id="saveBtn">
-            <span class="btn-text">Save to Blockchain</span>
-            <span class="btn-loading" hidden>Processing...</span>
-          </button>
-        </form>
-        
-        <!-- Transaction Info -->
-        <div id="transactionInfo" class="transaction-info" hidden>
-          <h4>📜 Transaction Details</h4>
-          <div class="info-row">
-            <span>Hash:</span>
-            <a id="txHash" href="#" target="_blank" class="hash-link"></a>
-          </div>
-          <div class="info-row">
-            <span>Status:</span>
-            <span id="txStatus" class="status-badge"></span>
-          </div>
+    <main class="main-grid">
+      <section class="card overview-section">
+        <div class="section-heading">
+          <span class="section-kicker">Phần 1</span>
+          <h2>NEAR dưới góc nhìn hệ cơ sở dữ liệu phân tán</h2>
+        </div>
+        <div class="concept-grid" id="conceptGrid"></div>
+      </section>
+
+      <section class="card architecture-section">
+        <div class="section-heading">
+          <span class="section-kicker">Phần 2</span>
+          <h2>Kiến trúc dữ liệu và Nightshade sharding</h2>
+        </div>
+        <div class="architecture-grid">
+          <article class="info-panel">
+            <h3>Block · Chunk · Receipt · State</h3>
+            <ul>
+              <li><strong>Block</strong> gom các <em>chunks</em> từ nhiều shards.</li>
+              <li><strong>Transaction</strong> là yêu cầu ghi dữ liệu có chữ ký.</li>
+              <li><strong>Receipt</strong> là thông điệp nội bộ phục vụ thực thi.</li>
+              <li><strong>State</strong> của contract là phần dữ liệu được truy vấn như một cơ sở dữ liệu.</li>
+            </ul>
+          </article>
+          <article class="info-panel">
+            <h3>Nightshade</h3>
+            <p>
+              NEAR chia dữ liệu và thực thi theo <strong>shards</strong>, nhưng vẫn tổng hợp kết quả vào block chung.
+              Điều này giúp hệ thống tăng khả năng mở rộng mà vẫn duy trì tính nhất quán thông qua consensus.
+            </p>
+            <div class="mini-timeline">
+              <span>Tx được ký</span>
+              <span>→ Chunk được tạo</span>
+              <span>→ Receipt được thực thi</span>
+              <span>→ State finalized</span>
+            </div>
+          </article>
         </div>
       </section>
 
-      <!-- Data Display -->
-      <section class="card data-section">
-        <div class="section-header">
-          <h2>📊 Stored Data</h2>
-          <div class="actions">
-            <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh</button>
-            <button class="btn btn-secondary" id="exportJsonBtn">📄 Export JSON</button>
-            <button class="btn btn-secondary" id="exportCsvBtn">📊 Export CSV</button>
-          </div>
-        </div>
-        
-        <div class="stats" id="stats">
-          <span>Total entries: <strong id="totalCount">0</strong></span>
+      <section class="card demo-section">
+        <div class="section-heading">
+          <span class="section-kicker">Phần 3</span>
+          <h2>Demo thao tác dữ liệu</h2>
+          <p>Phần này minh họa trực tiếp thao tác ghi, đọc và xuất dữ liệu trên NEAR Testnet.</p>
         </div>
 
-        <!-- Data Table -->
+        <div class="demo-grid">
+          <section class="subcard form-section">
+            <h3>Ghi dữ liệu mẫu lên blockchain</h3>
+            <p class="subtle-text">
+              Khi bấm lưu, ứng dụng gửi một <strong>change transaction</strong> đến smart contract.
+              Đây là tương đương gần với thao tác <em>INSERT/UPDATE</em> trong hệ cơ sở dữ liệu.
+            </p>
+            <form id="dataForm" class="data-form">
+              <div class="form-group">
+                <label for="keyInput">Key</label>
+                <input type="text" id="keyInput" placeholder="Ví dụ: student_01" required>
+              </div>
+              <div class="form-group">
+                <label for="valueInput">Value</label>
+                <input type="text" id="valueInput" placeholder="Ví dụ: Nguyễn Tuấn Dũng" required>
+              </div>
+              <button type="submit" class="btn btn-primary" id="saveBtn">
+                <span class="btn-text">Ghi lên blockchain</span>
+                <span class="btn-loading" hidden>Đang xử lý...</span>
+              </button>
+            </form>
+
+            <div id="transactionInfo" class="transaction-info" hidden>
+              <h4>Thông tin giao dịch</h4>
+              <div class="info-row">
+                <span>Hash</span>
+                <a id="txHash" href="#" target="_blank" class="hash-link"></a>
+              </div>
+              <div class="info-row">
+                <span>Trạng thái</span>
+                <span id="txStatus" class="status-badge"></span>
+              </div>
+              <div class="info-row">
+                <span>Giải thích</span>
+                <span id="txExplanation">-</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="subcard analysis-section">
+            <h3>Phân tích trạng thái hiện tại</h3>
+            <div class="analysis-stack">
+              <article class="analysis-item">
+                <span class="analysis-label">Block height</span>
+                <strong id="blockHeight">-</strong>
+              </article>
+              <article class="analysis-item">
+                <span class="analysis-label">Raw state pairs</span>
+                <strong id="rawPairs">-</strong>
+              </article>
+              <article class="analysis-item wide">
+                <span class="analysis-label">Latest state note</span>
+                <p id="storageNote">-</p>
+              </article>
+            </div>
+            <div class="section-actions">
+              <button class="btn btn-secondary" id="refreshBtn">Làm mới dữ liệu</button>
+              <button class="btn btn-secondary" id="exportJsonBtn">Xuất JSON</button>
+              <button class="btn btn-secondary" id="exportCsvBtn">Xuất CSV</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="card data-section">
+        <div class="section-heading inline-heading">
+          <div>
+            <span class="section-kicker">Phần 4</span>
+            <h2>Dữ liệu đã ghi trong contract state</h2>
+            <p>Danh sách dưới đây được đọc qua <strong>view method</strong>, nên không tạo block mới và không yêu cầu gas từ người xem.</p>
+          </div>
+          <div class="stats" id="stats">
+            <span>Total entries: <strong id="statsCount">0</strong></span>
+          </div>
+        </div>
+
         <div class="table-container">
           <table class="data-table" id="dataTable">
             <thead>
@@ -80,33 +188,53 @@
                 <th>Actions</th>
               </tr>
             </thead>
-            <tbody id="dataBody">
-              <!-- Data rows will be inserted here -->
-            </tbody>
+            <tbody id="dataBody"></tbody>
           </table>
         </div>
-        
+
         <div id="emptyState" class="empty-state" hidden>
-          <p>📭 No data stored yet</p>
-          <p>Add some data using the form above!</p>
+          <p>Chưa có bản ghi nào trong contract state.</p>
+          <p>Hãy thêm một mẫu dữ liệu để minh họa quá trình ghi và truy vấn trên NEAR.</p>
+        </div>
+      </section>
+
+      <section class="card state-section">
+        <div class="section-heading">
+          <span class="section-kicker">Phần 5</span>
+          <h2>Giải thích ý nghĩa học thuật của demo</h2>
+        </div>
+        <div class="evidence-grid">
+          <article class="evidence-card">
+            <h3>INSERT</h3>
+            <p>Form ghi dữ liệu tạo giao dịch có chữ ký để thay đổi contract state.</p>
+          </article>
+          <article class="evidence-card">
+            <h3>SELECT</h3>
+            <p>Bảng dữ liệu và số lượng bản ghi được lấy bằng view method / RPC query.</p>
+          </article>
+          <article class="evidence-card">
+            <h3>Immutability</h3>
+            <p>Lịch sử giao dịch vẫn tồn tại dù trạng thái hiện tại có thể thay đổi bởi update hoặc delete.</p>
+          </article>
+          <article class="evidence-card">
+            <h3>Export</h3>
+            <p>JSON/CSV giúp chuyển dữ liệu on-chain sang dạng dễ phân tích ngoài chuỗi.</p>
+          </article>
         </div>
       </section>
     </main>
 
-    <!-- Footer -->
     <footer class="footer">
-      <p>NEAR Protocol Demo - Demonstrating blockchain data storage and retrieval</p>
+      <p>Demo phục vụ đề tài: <strong>Phân tích Blockchain như một hệ cơ sở dữ liệu phân tán – Trường hợp NEAR Protocol</strong></p>
       <p>
-        <a href="https://docs.near.org" target="_blank">📚 NEAR Docs</a>
+        <a href="https://docs.near.org" target="_blank">NEAR Docs</a>
         <span>|</span>
-        <a href="https://testnet.nearblocks.io" target="_blank">🔍 NEAR Explorer</a>
+        <a href="https://testnet.nearblocks.io" target="_blank">NEAR Explorer</a>
       </p>
     </footer>
   </div>
 
-  <!-- Toast Notifications -->
   <div id="toastContainer" class="toast-container"></div>
-
   <script src="js/app.js"></script>
 </body>
 </html>

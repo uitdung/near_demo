@@ -10,6 +10,7 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 const CONTRACT_DIR = path.join(PROJECT_ROOT, 'contract');
 const WASM_FILE = path.join(CONTRACT_DIR, 'target', 'near', 'near_kv_store.wasm');
 const BUILD_SCRIPT = path.join(PROJECT_ROOT, 'scripts', 'build-contract.js');
+const EMPTY_JSON_ARGS = '"{}"';
 
 dotenv.config({ path: path.join(PROJECT_ROOT, '.env') });
 
@@ -18,11 +19,17 @@ const clean = (value) => {
     return String(value).trim().replace(/^['"]|['"]$/g, '');
 };
 
+const toNearCliPath = (value) => String(value).replace(/\\/g, '/');
+
 const config = {
     networkId: clean(process.env.NEAR_NETWORK) || 'testnet',
     contractId: clean(process.env.NEAR_CONTRACT_ID),
     masterAccount: clean(process.env.NEAR_MASTER_ACCOUNT),
 };
+
+const cliArgs = new Set(process.argv.slice(2));
+const forceInit = cliArgs.has('--force-init');
+
 
 function fail(message) {
     console.error(`❌ ${message}`);
@@ -66,7 +73,9 @@ if (!config.masterAccount) {
 console.log('📦 Configuration:');
 console.log(`   Network: ${config.networkId}`);
 console.log(`   Contract ID: ${config.contractId}`);
-console.log(`   Signer: ${config.masterAccount}\n`);
+console.log(`   Signer: ${config.masterAccount}`);
+console.log(`   Force init: ${forceInit ? 'yes' : 'no'}\n`);
+
 
 console.log('🔧 Step 1: Building Rust contract...');
 try {
@@ -94,16 +103,30 @@ try {
 
 console.log('📤 Step 3: Deploying contract...');
 try {
-    runAndPrint(`near deploy ${config.contractId} "${WASM_FILE}" --networkId ${config.networkId}`);
+    const wasmPathForNearCli = toNearCliPath(WASM_FILE);
+    runAndPrint(`near deploy ${config.contractId} "${wasmPathForNearCli}" --networkId ${config.networkId}`);
     console.log('✅ Contract deployed successfully!\n');
 } catch {
     fail('Deployment failed. Make sure the account is available in `near-cli-rs` (for example via `near login`) and has enough balance.');
 }
 
 console.log('🔧 Step 4: Initializing contract...');
+const verifyCommand = `near view ${config.contractId} count ${EMPTY_JSON_ARGS} --networkId ${config.networkId}`;
+
 try {
-    runAndPrint(`near call ${config.contractId} new '{}' --useAccount ${config.masterAccount} --networkId ${config.networkId}`);
-    console.log('✅ Contract initialized successfully!\n');
+    if (!forceInit) {
+        try {
+            run(verifyCommand);
+            console.log('ℹ️  Contract already responds to view calls. Skipping init by default.');
+            console.log('   Use `npm run deploy:contract -- --force-init` to force the init transaction.\n');
+        } catch {
+            runAndPrint(`near call ${config.contractId} new ${EMPTY_JSON_ARGS} --useAccount ${config.masterAccount} --networkId ${config.networkId}`);
+            console.log('✅ Contract initialized successfully!\n');
+        }
+    } else {
+        runAndPrint(`near call ${config.contractId} new ${EMPTY_JSON_ARGS} --useAccount ${config.masterAccount} --networkId ${config.networkId}`);
+        console.log('✅ Contract initialized successfully!\n');
+    }
 } catch (error) {
     const combined = `${error.stdout || ''}\n${error.stderr || ''}`;
     if (combined.includes('already initialized') || combined.includes('The contract has already been initialized')) {
@@ -116,7 +139,7 @@ try {
 
 console.log('🔍 Step 5: Verifying deployment...');
 try {
-    const output = runAndPrint(`near view ${config.contractId} count '{}' --networkId ${config.networkId}`);
+    const output = runAndPrint(verifyCommand);
     console.log('✅ Contract is responding to view calls!');
     if (output?.trim()) {
         console.log(`   count(): ${output.trim()}\n`);
@@ -130,10 +153,12 @@ console.log('══════════════════════�
 console.log('🎉 Deployment complete!\n');
 console.log('📋 Contract details:');
 console.log(`   Account: ${config.contractId}`);
-console.log(`   WASM: ${WASM_FILE}`);
+console.log(`   WASM: ${toNearCliPath(WASM_FILE)}`);
 console.log(`   Explorer: https://${config.networkId === 'mainnet' ? '' : 'testnet.'}nearblocks.io/address/${config.contractId}\n`);
 console.log('📝 Next steps:');
 console.log('   1. If needed, run `near login` for the signer account');
-console.log('   2. Run: npm start');
-console.log('   3. Open: http://localhost:8080');
+console.log('   2. Default deploy skips redundant init when the contract already responds to `count()`');
+console.log('   3. Use `npm run deploy:contract -- --force-init` to force the init transaction');
+console.log('   4. Run: npm start');
+console.log('   5. Open: http://localhost:8080');
 console.log('═══════════════════════════════════════════════════════════');

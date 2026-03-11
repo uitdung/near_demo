@@ -1,14 +1,11 @@
 /**
- * NEAR Demo Backend Server
- * 
- * Express server providing API endpoints to interact with
- * the NEAR blockchain smart contract.
+ * NEAR distributed-database demo backend server.
  */
 
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { initNear, getContractId } from './near.js';
+import { initNear, getContractId, getNetworkConfig } from './near.js';
 import routes from './routes.js';
 
 dotenv.config();
@@ -16,41 +13,41 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Request logging
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
     next();
 });
 
-// API Routes
 app.use('/api', routes);
 
-// Root endpoint
 app.get('/', (req, res) => {
+    const network = getNetworkConfig();
+
     res.json({
-        name: 'NEAR Demo Backend',
+        name: 'NEAR Distributed Database Analysis Backend',
         version: '1.0.0',
-        description: 'API for interacting with NEAR blockchain key-value store',
+        description: 'API for demonstrating NEAR state storage, transaction-based writes, view queries, exports, and distributed-database concepts.',
+        contractId: getContractId(),
+        network: network.networkId,
         endpoints: {
-            'GET /api/health': 'Health check',
-            'GET /api/data': 'Get all data',
-            'GET /api/data/:key': 'Get data by key',
-            'POST /api/data': 'Save new data (body: {key, value})',
-            'DELETE /api/data/:key': 'Delete data by key',
-            'GET /api/export/json': 'Export all data as JSON',
-            'GET /api/export/csv': 'Export all data as CSV',
-            'GET /api/transaction/:hash': 'Get transaction status',
-            'GET /api/state': 'Get raw contract state',
-            'GET /api/count': 'Get count of entries',
+            'GET /api/health': 'Backend health and project metadata',
+            'GET /api/analysis/summary': 'High-level analysis summary for sharding, state, storage, and transaction concepts',
+            'GET /api/data': 'Read all contract data through a view method',
+            'GET /api/data/:key': 'Lookup a single record by key',
+            'POST /api/data': 'Write sample data through a signed blockchain transaction',
+            'DELETE /api/data/:key': 'Delete a record through a state-changing transaction',
+            'GET /api/export/json': 'Export state-derived records as JSON',
+            'GET /api/export/csv': 'Export state-derived records as CSV',
+            'GET /api/transaction/:hash': 'Inspect a transaction outcome',
+            'GET /api/state': 'Inspect raw decoded contract state',
+            'GET /api/count': 'Read aggregate entry count',
         },
     });
 });
 
-// Error handling
 app.use((err, req, res, next) => {
     console.error('Error:', err);
     res.status(500).json({
@@ -59,7 +56,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Initialize NEAR connection and start server
 async function start() {
     try {
         console.log('🔄 Initializing NEAR connection...');
@@ -68,7 +64,7 @@ async function start() {
 
         app.listen(PORT, () => {
             console.log(`\n🚀 Server running on http://localhost:${PORT}`);
-            console.log(`📡 API endpoints available at http://localhost:${PORT}/api\n`);
+            console.log(`📡 Analysis API available at http://localhost:${PORT}/api\n`);
         });
     } catch (error) {
         console.error('❌ Failed to start server:', error);
