@@ -31,7 +31,7 @@ NEAR_MASTER_ACCOUNT=your-account.testnet
 - Account có đủ testnet NEAR để deploy và gas
 
 > [!NOTE]
-> Flow đúng là dùng **`cargo near build`** để tạo artifact deployable, sau đó dùng **`near-cli-rs`** (`near`) để deploy contract và gọi method theo docs chính thức.
+> Flow đúng đã test thành công trên Windows là dùng **Rust `1.86`** + **`cargo near build non-reproducible-wasm --no-abi`** để tạo artifact deployable, sau đó dùng **`near-cli-rs`** (`near`) để deploy contract.
 >
 > **`near-cli-rs` không build Rust contract**; bước build vẫn cần **`cargo-near`**.
 
@@ -76,6 +76,9 @@ npm run setup
 
 Lệnh này sẽ cài dependencies ở root và backend.
 
+> [!TIP]
+> Contract hiện đã được pin ở `contract/rust-toolchain.toml` sang **Rust `1.86`** để tránh lỗi `wasm, compiled with 1.87.0 or newer rust toolchain is currently not compatible with nearcore VM`.
+
 ---
 
 ## Bước 3: Build Contract
@@ -83,6 +86,12 @@ Lệnh này sẽ cài dependencies ở root và backend.
 ```bash
 cd c:\project\near_demo
 npm run build:contract
+```
+
+Build script thực tế chạy:
+
+```bash
+cargo near build non-reproducible-wasm --no-abi
 ```
 
 WASM output:
@@ -101,15 +110,33 @@ npm run deploy:contract
 ```
 
 Script sẽ:
-1. Build contract bằng `cargo near build` (**cần `cargo-near`**)
+1. Build contract bằng `cargo near build non-reproducible-wasm --no-abi` (**cần `cargo-near`**)
 2. Kiểm tra `near-cli-rs` đã được cài
 3. Deploy artifact `contract/target/near/near_kv_store.wasm`
-4. Gọi `new()` để init contract bằng `near call`
-5. Verify bằng `near view`
+4. Cố gắng gọi `new()` và verify bằng `near-cli-rs`
+
+> [!WARNING]
+> Trong lần test thực tế, phần `near call` / `near view` trong script có thể báo lỗi `Data not in JSON format!` do cách parse args của `near-cli-rs`. Khi gặp lỗi này, hãy chạy **thủ công** các lệnh dưới đây.
+
+### Init thủ công sau deploy
+
+```bash
+near call your-account.testnet new "{}" --useAccount your-account.testnet --networkId testnet
+```
+
+### Verify thủ công
+
+```bash
+near view your-account.testnet count "{}" --networkId testnet
+near view your-account.testnet get_data '{"key":"hello"}' --networkId testnet
+```
 
 ---
 
 ## Bước 5: Start App
+
+> [!IMPORTANT]
+> Trước khi chạy `npm start`, `npm run rebuild`, hoặc `docker compose ...`, hãy mở **Docker Desktop** và chờ trạng thái **running**.
 
 ```bash
 cd c:\project\near_demo
@@ -165,19 +192,36 @@ npm run reset
 ### Lỗi build contract
 ```bash
 cargo install cargo-near --locked
+cargo near --help
 npm run build:contract
 ```
 
-### `near: command not found`
+### `wasm, compiled with 1.87.0 or newer rust toolchain is currently not compatible with nearcore VM`
+- Dùng **Rust `1.86`** cho thư mục `contract`
+- File `contract/rust-toolchain.toml` đã được pin sang `1.86`
+- Nếu cần cài thủ công:
+
 ```bash
-npm install -g near-cli-rs@latest
-near --version
+rustup install 1.86
+rustup target add wasm32-unknown-unknown --toolchain 1.86
 ```
+
+### `Data not in JSON format!`
+- Lỗi này xảy ra ở `near-cli-rs` khi script truyền args JSON chưa đúng format cho `near call` / `near view`
+- Chạy tay lệnh đã test thành công:
+
+```bash
+near call your-account.testnet new "{}" --useAccount your-account.testnet --networkId testnet
+near view your-account.testnet count "{}" --networkId testnet
+```
+
+### `open //./pipe/dockerDesktopLinuxEngine`
+- Docker Desktop chưa chạy
+- Mở Docker Desktop và chờ trạng thái **running**, sau đó chạy lại `npm start` hoặc `npm run rebuild`
 
 ### `CompilationError(PrepareError(Deserialization))`
 - Không deploy file build thô từ `cargo build`
-- Chạy lại `npm run build:contract` để tạo artifact trong `contract/target/near`
-- Sau đó chạy lại `npm run deploy:contract`
+- Chỉ deploy artifact trong `contract/target/near/near_kv_store.wasm`
 
 ---
 

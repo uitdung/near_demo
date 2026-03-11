@@ -8,8 +8,9 @@ Smart contract bằng Rust để minh họa lưu trữ và truy vấn dữ liệ
 # Install the NEAR contract build tool once
 cargo install cargo-near --locked
 
+# Use Rust 1.86 for this contract (already pinned in rust-toolchain.toml)
 # Build a NEAR-compatible release artifact
-cargo near build
+cargo near build non-reproducible-wasm --no-abi
 ```
 
 Output artifact:
@@ -28,7 +29,12 @@ target/near/near_kv_store.wasm
 npm install -g near-cli-rs@latest
 
 near deploy $NEAR_CONTRACT_ID ./target/near/near_kv_store.wasm --networkId testnet
+near call $NEAR_CONTRACT_ID new "{}" --useAccount $NEAR_CONTRACT_ID --networkId testnet
+near view $NEAR_CONTRACT_ID count "{}" --networkId testnet
 ```
+
+> [!WARNING]
+> Trong quá trình test thực tế, các lệnh scripted kiểu `near call ... '{}'` có thể báo `Data not in JSON format!`. Dùng cú pháp đã test thành công ở trên với `"{}"` cho init / verify thủ công.
 
 ## Usage
 
@@ -36,23 +42,23 @@ near deploy $NEAR_CONTRACT_ID ./target/near/near_kv_store.wasm --networkId testn
 
 ```bash
 # Get single data
-near view $CONTRACT_ID get_data '{"key": "user1"}'
+near view $CONTRACT_ID get_data '{"key":"user1"}' --networkId testnet
 
 # Get all data
-near view $CONTRACT_ID get_all_data
+near view $CONTRACT_ID get_all_data "{}" --networkId testnet
 
 # Count entries
-near view $CONTRACT_ID count
+near view $CONTRACT_ID count "{}" --networkId testnet
 ```
 
 ### Change Methods (Cost Gas)
 
 ```bash
 # Set data
-near call $CONTRACT_ID set_data '{"key": "user1", "value": "Alice"}' --accountId your-account.testnet
+near call $CONTRACT_ID set_data '{"key":"user1","value":"Alice"}' --useAccount your-account.testnet --networkId testnet
 
 # Delete data
-near call $CONTRACT_ID delete_data '{"key": "user1"}' --accountId your-account.testnet
+near call $CONTRACT_ID delete_data '{"key":"user1"}' --useAccount your-account.testnet --networkId testnet
 ```
 
 ## Contract API

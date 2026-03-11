@@ -48,7 +48,11 @@ near_demo/
 - 1 NEAR testnet account với private key
 
 > [!NOTE]
-> Flow đúng theo docs là: dùng **`cargo near build`** để tạo contract artifact trong `target/near`, sau đó dùng **`near-cli-rs`** (lệnh `near`) để deploy, init và verify contract.
+> Flow đúng theo docs và thực tế đã test trên Windows là:
+> 1. dùng **Rust `1.86`** cho contract,
+> 2. build bằng **`cargo near build non-reproducible-wasm --no-abi`** để tạo artifact trong `target/near`,
+> 3. dùng **`near-cli-rs`** (lệnh `near`) để deploy,
+> 4. nếu cần thì init thủ công bằng `near call ... new "{}"`.
 >
 > **`near-cli-rs` không thay thế `cargo-near` cho bước build.**
 
@@ -90,13 +94,21 @@ npm run build:contract
 npm run deploy:contract
 ```
 
-- `npm run build:contract` → chạy `cargo near build non-reproducible-wasm` (**cần `cargo-near`**)
-- `npm run deploy:contract` → chạy `near deploy`, `near call`, `near view` (**cần `near-cli-rs`**)
+- `npm run build:contract` → chạy `cargo near build non-reproducible-wasm --no-abi` (**cần `cargo-near`**)
+- `npm run deploy:contract` → build rồi deploy bằng `near-cli-rs`; nếu `near call` / `near view` trong script báo lỗi JSON thì chạy init / verify thủ công theo các lệnh bên dưới
 
 Deploy artifact:
 
 ```text
 contract/target/near/near_kv_store.wasm
+```
+
+### 4.1 Lệnh deploy / init / verify đã test thành công
+
+```bash
+near deploy your-account.testnet .\contract\target\near\near_kv_store.wasm --networkId testnet
+near call your-account.testnet new "{}" --useAccount your-account.testnet --networkId testnet
+near view your-account.testnet count "{}" --networkId testnet
 ```
 
 ### 5. Chạy App
@@ -123,6 +135,9 @@ npm run stop
 npm run rebuild
 npm run reset
 ```
+
+> [!IMPORTANT]
+> Trước khi chạy `npm start`, `npm run rebuild`, hoặc bất kỳ lệnh Docker nào, hãy mở **Docker Desktop** và chờ trạng thái **running**. Nếu không bạn sẽ gặp lỗi `open //./pipe/dockerDesktopLinuxEngine`.
 
 ## 📋 API Endpoints
 
