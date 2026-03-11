@@ -30,7 +30,6 @@ const config = {
 const cliArgs = new Set(process.argv.slice(2));
 const forceInit = cliArgs.has('--force-init');
 
-
 function fail(message) {
     console.error(`❌ ${message}`);
     process.exit(1);
@@ -76,7 +75,6 @@ console.log(`   Contract ID: ${config.contractId}`);
 console.log(`   Signer: ${config.masterAccount}`);
 console.log(`   Force init: ${forceInit ? 'yes' : 'no'}\n`);
 
-
 console.log('🔧 Step 1: Building Rust contract...');
 try {
     execSync(`node "${BUILD_SCRIPT}"`, {
@@ -111,7 +109,7 @@ try {
 }
 
 console.log('🔧 Step 4: Initializing contract...');
-const verifyCommand = `near view ${config.contractId} count ${EMPTY_JSON_ARGS} --networkId ${config.networkId}`;
+const verifyCommand = `near view ${config.contractId} count_properties ${EMPTY_JSON_ARGS} --networkId ${config.networkId}`;
 
 try {
     if (!forceInit) {
@@ -142,7 +140,7 @@ try {
     const output = runAndPrint(verifyCommand);
     console.log('✅ Contract is responding to view calls!');
     if (output?.trim()) {
-        console.log(`   count(): ${output.trim()}\n`);
+        console.log(`   count_properties(): ${output.trim()}\n`);
     }
 } catch {
     console.error('⚠️  Could not verify contract with `near view`.');
@@ -157,8 +155,8 @@ console.log(`   WASM: ${toNearCliPath(WASM_FILE)}`);
 console.log(`   Explorer: https://${config.networkId === 'mainnet' ? '' : 'testnet.'}nearblocks.io/address/${config.contractId}\n`);
 console.log('📝 Next steps:');
 console.log('   1. If needed, run `near login` for the signer account');
-console.log('   2. Default deploy skips redundant init when the contract already responds to `count()`');
+console.log('   2. Default deploy skips redundant init when the contract already responds to `count_properties()`');
 console.log('   3. Use `npm run deploy:contract -- --force-init` to force the init transaction');
 console.log('   4. Run: npm start');
-console.log('   5. Open: http://localhost:8080');
+console.log('   5. Open: http://localhost:8081');
 console.log('═══════════════════════════════════════════════════════════');

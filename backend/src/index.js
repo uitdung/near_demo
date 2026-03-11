@@ -1,5 +1,5 @@
 /**
- * NEAR distributed-database demo backend server.
+ * NEAR property-registry demo backend server.
  */
 
 import express from 'express';
@@ -27,23 +27,25 @@ app.get('/', (req, res) => {
     const network = getNetworkConfig();
 
     res.json({
-        name: 'NEAR Distributed Database Analysis Backend',
+        name: 'NEAR Property Registry Analysis Backend',
         version: '1.0.0',
-        description: 'API for demonstrating NEAR state storage, transaction-based writes, view queries, exports, and distributed-database concepts.',
+        description: 'API for demonstrating NEAR state storage, transaction-based writes, property ownership updates, view queries, exports, and distributed-database concepts.',
         contractId: getContractId(),
         network: network.networkId,
         endpoints: {
             'GET /api/health': 'Backend health and project metadata',
-            'GET /api/analysis/summary': 'High-level analysis summary for sharding, state, storage, and transaction concepts',
-            'GET /api/data': 'Read all contract data through a view method',
-            'GET /api/data/:key': 'Lookup a single record by key',
-            'POST /api/data': 'Write sample data through a signed blockchain transaction',
-            'DELETE /api/data/:key': 'Delete a record through a state-changing transaction',
-            'GET /api/export/json': 'Export state-derived records as JSON',
-            'GET /api/export/csv': 'Export state-derived records as CSV',
+            'GET /api/analysis/summary': 'High-level analysis summary for registry state, storage, sharding, and transaction concepts',
+            'GET /api/properties': 'Read all property records or filter by owner via view methods',
+            'GET /api/properties/:propertyId': 'Lookup a single property by property_id',
+            'POST /api/properties': 'Create a property or update it when the property_id already exists',
+            'PUT /api/properties/:propertyId': 'Update property details and current owner',
+            'POST /api/properties/:propertyId/transfer': 'Transfer property ownership',
+            'DELETE /api/properties/:propertyId': 'Delete a property record through a state-changing transaction',
+            'GET /api/export/json': 'Export property records as JSON',
+            'GET /api/export/csv': 'Export property records as CSV',
             'GET /api/transaction/:hash': 'Inspect a transaction outcome',
             'GET /api/state': 'Inspect raw decoded contract state',
-            'GET /api/count': 'Read aggregate entry count',
+            'GET /api/count': 'Read aggregate property count',
         },
     });
 });

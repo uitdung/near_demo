@@ -33,7 +33,7 @@ cp backend/.env.example backend/.env
 docker-compose up --build
 
 # 3. Truy cập
-Frontend: http://localhost:8080
+Frontend: http://localhost:8081
 Backend API: http://localhost:3000
 ```
 

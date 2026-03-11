@@ -2,7 +2,7 @@
  * NEAR Blockchain Connection Module
  *
  * Exposes low-level contract calls plus higher-level summaries used to
- * explain NEAR as a distributed database demo.
+ * explain NEAR as a distributed database through a property registry demo.
  */
 
 import { connect, keyStores, utils } from 'near-api-js';
@@ -12,7 +12,7 @@ dotenv.config();
 
 const config = {
     networkId: process.env.NEAR_NETWORK || 'testnet',
-    nodeUrl: process.env.NEAR_NODE_URL || 'https://rpc.testnet.near.org',
+    nodeUrl: process.env.NEAR_NODE_URL || 'https://rpc.testnet.fastnear.com',
     walletUrl: process.env.NEAR_WALLET_URL || 'https://testnet.mynearwallet.com',
     helperUrl: process.env.NEAR_HELPER_URL || 'https://helper.testnet.near.org',
     keyStore: new keyStores.InMemoryKeyStore(),
@@ -154,21 +154,24 @@ export async function getAccountInfo(accountId) {
 }
 
 export async function getAnalysisSummary() {
-    const [entries, state, accountInfo] = await Promise.all([
-        callViewFunction('get_all_data'),
+    const [properties, state, accountInfo, totalProperties] = await Promise.all([
+        callViewFunction('get_all_properties'),
         queryContractState(),
         getAccountInfo(config.contractId),
+        callViewFunction('count_properties'),
     ]);
 
-    const latestEntry = entries.length > 0 ? entries[entries.length - 1] : null;
+    const latestProperty = properties.length > 0 ? properties[properties.length - 1] : null;
+    const uniqueOwners = new Set(properties.map((property) => property.owner)).size;
 
     return {
-        title: 'NEAR as a distributed database demo',
+        title: 'NEAR property ownership registry',
         network: getNetworkConfig(),
         contract: {
             accountId: config.contractId,
-            totalEntries: entries.length,
-            latestEntry,
+            totalProperties,
+            totalOwners: uniqueOwners,
+            latestProperty,
         },
         state: {
             blockHeight: state.blockHeight,
@@ -178,23 +181,28 @@ export async function getAnalysisSummary() {
         },
         storage: {
             usageBytes: accountInfo.storageUsage,
-            note: 'Storage usage is maintained at the account/contract state level and helps explain storage staking on NEAR.',
+            note: 'Contract state stores property records on-chain, and storage usage helps explain storage staking and persistent state costs on NEAR.',
         },
         concepts: [
             {
                 id: 'insert',
-                title: 'INSERT on blockchain',
-                description: 'A write is modeled as a signed transaction that executes a change method and mutates contract state.',
+                title: 'INSERT = create property',
+                description: 'Creating a property record is a signed transaction that inserts a new ownership record into contract state.',
+            },
+            {
+                id: 'update',
+                title: 'UPDATE = transfer or edit property',
+                description: 'Updating a property or transferring ownership rewrites the current state for that property while the transaction history remains on-chain.',
             },
             {
                 id: 'select',
-                title: 'SELECT on blockchain',
-                description: 'A read is modeled as a view call or RPC state query, so no new block is produced and no gas is paid by the viewer.',
+                title: 'SELECT = view current ownership',
+                description: 'Property lookups and list queries are read-only view calls, so no new block is produced and the viewer pays no gas.',
             },
             {
                 id: 'state',
                 title: 'State as the database',
-                description: 'Contract state is stored in NEAR account storage and can be queried directly through RPC as encoded key-value state.',
+                description: 'The registry lives in NEAR account storage and can be discussed as a distributed state database backed by the blockchain runtime.',
             },
             {
                 id: 'sharding',
@@ -204,7 +212,7 @@ export async function getAnalysisSummary() {
             {
                 id: 'integrity',
                 title: 'Data integrity',
-                description: 'Hashes, block linkage, receipts, and consensus make finalized state difficult to alter retroactively.',
+                description: 'Hashes, receipts, finality, and consensus protect the integrity of finalized ownership records and transaction outcomes.',
             },
         ],
     };

@@ -42,7 +42,7 @@ echo "========================================"
 echo "  App da san sang!"
 echo "========================================"
 echo
-echo "  Frontend:  http://localhost:8080"
+echo "  Frontend:  http://localhost:8081"
 echo "  Backend:   http://localhost:3000"
 echo "  API Docs:  http://localhost:3000/api/health"
 echo

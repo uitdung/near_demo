@@ -59,7 +59,7 @@ copy .env.example .env
 
 ```env
 NEAR_NETWORK=testnet
-NEAR_NODE_URL=https://rpc.testnet.near.org
+NEAR_NODE_URL=https://rpc.testnet.fastnear.com
 NEAR_WALLET_URL=https://testnet.mynearwallet.com
 NEAR_HELPER_URL=https://helper.testnet.near.org
 NEAR_CONTRACT_ID=your-account.testnet
@@ -154,7 +154,7 @@ npm start
 ```
 
 Truy cập:
-- **Frontend**: http://localhost:8080
+- **Frontend**: http://localhost:8081
 - **Backend**: http://localhost:3000
 - **Health**: http://localhost:3000/api/health
 - **Analysis summary**: http://localhost:3000/api/analysis/summary

@@ -1,17 +1,23 @@
 /**
- * NEAR distributed-database demo frontend.
+ * NEAR property-registry demo frontend.
  */
 
 const API_BASE = '/api';
 
-let allData = [];
+let allProperties = [];
 let analysisSummary = null;
 
-const dataForm = document.getElementById('dataForm');
-const keyInput = document.getElementById('keyInput');
-const valueInput = document.getElementById('valueInput');
+const propertyForm = document.getElementById('propertyForm');
+const transferForm = document.getElementById('transferForm');
+const propertyIdInput = document.getElementById('propertyIdInput');
+const descriptionInput = document.getElementById('descriptionInput');
+const ownerInput = document.getElementById('ownerInput');
+const transferPropertyIdInput = document.getElementById('transferPropertyIdInput');
+const newOwnerInput = document.getElementById('newOwnerInput');
 const saveBtn = document.getElementById('saveBtn');
+const transferBtn = document.getElementById('transferBtn');
 const refreshBtn = document.getElementById('refreshBtn');
+const resetBtn = document.getElementById('resetBtn');
 const exportJsonBtn = document.getElementById('exportJsonBtn');
 const exportCsvBtn = document.getElementById('exportCsvBtn');
 const dataBody = document.getElementById('dataBody');
@@ -29,6 +35,7 @@ const contractId = document.getElementById('contractId');
 const storageUsage = document.getElementById('storageUsage');
 const blockHeight = document.getElementById('blockHeight');
 const rawPairs = document.getElementById('rawPairs');
+const ownerCount = document.getElementById('ownerCount');
 const storageNote = document.getElementById('storageNote');
 const conceptGrid = document.getElementById('conceptGrid');
 
@@ -50,10 +57,12 @@ async function init() {
         showToast('Không thể kết nối backend. Hãy kiểm tra server đang chạy.', 'error');
     }
 
-    await Promise.all([loadAnalysisSummary(), loadAllData()]);
+    await Promise.all([loadAnalysisSummary(), loadAllProperties()]);
 
-    dataForm.addEventListener('submit', handleSaveData);
+    propertyForm.addEventListener('submit', handleSaveProperty);
+    transferForm.addEventListener('submit', handleTransferProperty);
     refreshBtn.addEventListener('click', refreshDashboard);
+    resetBtn.addEventListener('click', handleResetRegistry);
     exportJsonBtn.addEventListener('click', exportJSON);
     exportCsvBtn.addEventListener('click', exportCSV);
 }
@@ -68,7 +77,7 @@ function updateConnectionStatus(status) {
             statusDot.className = 'status-dot';
             break;
         case 'connected':
-            statusText.textContent = 'Đã kết nối tới NEAR demo backend';
+            statusText.textContent = 'Đã kết nối tới NEAR property registry backend';
             statusDot.className = 'status-dot connected';
             break;
         default:
@@ -108,15 +117,23 @@ function formatTimestamp(timestamp) {
     }
 }
 
-function truncate(str, length = 24) {
+function truncate(str, length = 28) {
     if (!str) return '';
     return str.length > length ? `${str.slice(0, length)}...` : str;
 }
 
 function escapeHtml(text) {
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = text ?? '';
     return div.innerHTML;
+}
+
+function setTransactionDetails(transactionHash, explanation) {
+    txHash.textContent = transactionHash;
+    txHash.href = `https://testnet.nearblocks.io/txns/${transactionHash}`;
+    txStatus.textContent = 'Success';
+    txExplanation.textContent = explanation;
+    transactionInfo.hidden = false;
 }
 
 async function loadAnalysisSummary() {
@@ -138,11 +155,12 @@ async function loadAnalysisSummary() {
 function renderAnalysisSummary() {
     if (!analysisSummary) return;
 
-    totalCount.textContent = analysisSummary.contract.totalEntries;
-    statsCount.textContent = analysisSummary.contract.totalEntries;
+    totalCount.textContent = analysisSummary.contract.totalProperties;
+    statsCount.textContent = analysisSummary.contract.totalProperties;
     storageUsage.textContent = `${analysisSummary.storage.usageBytes} bytes`;
     blockHeight.textContent = analysisSummary.state.blockHeight || '-';
     rawPairs.textContent = analysisSummary.state.rawPairs || 0;
+    ownerCount.textContent = analysisSummary.contract.totalOwners || 0;
     storageNote.textContent = analysisSummary.storage.note;
 
     conceptGrid.innerHTML = '';
@@ -157,28 +175,35 @@ function renderAnalysisSummary() {
     });
 }
 
-async function loadAllData() {
+async function loadAllProperties() {
     try {
-        const response = await fetch(`${API_BASE}/data`);
+        const response = await fetch(`${API_BASE}/properties`);
         const result = await response.json();
 
         if (!result.success) {
             throw new Error(result.error || 'Không thể tải dữ liệu');
         }
 
-        allData = result.data || [];
+        allProperties = result.data || [];
         renderDataTable();
-        totalCount.textContent = allData.length;
-        statsCount.textContent = allData.length;
+        totalCount.textContent = allProperties.length;
+        statsCount.textContent = allProperties.length;
     } catch (error) {
         showToast(`Lỗi tải dữ liệu: ${error.message}`, 'error');
     }
 }
 
+function fillPropertyForm(property) {
+    propertyIdInput.value = property.property_id;
+    descriptionInput.value = property.description;
+    ownerInput.value = property.owner;
+    transferPropertyIdInput.value = property.property_id;
+}
+
 function renderDataTable() {
     dataBody.innerHTML = '';
 
-    if (allData.length === 0) {
+    if (allProperties.length === 0) {
         emptyState.hidden = false;
         document.getElementById('dataTable').hidden = true;
         return;
@@ -187,35 +212,57 @@ function renderDataTable() {
     emptyState.hidden = true;
     document.getElementById('dataTable').hidden = false;
 
-    allData.forEach((entry) => {
+    allProperties.forEach((property) => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td><strong>${escapeHtml(entry.key)}</strong></td>
-            <td>${escapeHtml(entry.value)}</td>
-            <td class="sender">${escapeHtml(truncate(entry.sender, 28))}</td>
-            <td>${formatTimestamp(entry.timestamp)}</td>
+            <td><strong>${escapeHtml(property.property_id)}</strong></td>
+            <td>${escapeHtml(property.description)}</td>
+            <td>${escapeHtml(property.owner)}</td>
+            <td class="sender">${escapeHtml(truncate(property.updated_by, 28))}</td>
+            <td>${formatTimestamp(property.timestamp)}</td>
             <td>
-                <button class="btn btn-danger delete-btn" data-key="${escapeHtml(entry.key)}">
-                    Xóa
-                </button>
+                <div class="table-actions">
+                    <button class="btn btn-secondary edit-btn" data-property-id="${escapeHtml(property.property_id)}">Sửa</button>
+                    <button class="btn btn-secondary transfer-btn" data-property-id="${escapeHtml(property.property_id)}" data-owner="${escapeHtml(property.owner)}">Transfer</button>
+                    <button class="btn btn-danger delete-btn" data-property-id="${escapeHtml(property.property_id)}">Xóa</button>
+                </div>
             </td>
         `;
         dataBody.appendChild(row);
     });
 
+    document.querySelectorAll('.edit-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+            const property = allProperties.find((item) => item.property_id === button.dataset.propertyId);
+            if (property) {
+                fillPropertyForm(property);
+                showToast(`Đã nạp property ${property.property_id} vào form để cập nhật.`, 'success');
+            }
+        });
+    });
+
+    document.querySelectorAll('.transfer-btn').forEach((button) => {
+        button.addEventListener('click', () => {
+            transferPropertyIdInput.value = button.dataset.propertyId;
+            newOwnerInput.focus();
+            showToast(`Sẵn sàng chuyển quyền sở hữu cho ${button.dataset.propertyId}.`, 'success');
+        });
+    });
+
     document.querySelectorAll('.delete-btn').forEach((button) => {
-        button.addEventListener('click', () => handleDeleteData(button.dataset.key));
+        button.addEventListener('click', () => handleDeleteProperty(button.dataset.propertyId));
     });
 }
 
-async function handleSaveData(event) {
+async function handleSaveProperty(event) {
     event.preventDefault();
 
-    const key = keyInput.value.trim();
-    const value = valueInput.value.trim();
+    const propertyId = propertyIdInput.value.trim();
+    const description = descriptionInput.value.trim();
+    const owner = ownerInput.value.trim();
 
-    if (!key || !value) {
-        showToast('Vui lòng nhập cả key và value.', 'error');
+    if (!propertyId || !description || !owner) {
+        showToast('Vui lòng nhập property_id, description và owner.', 'error');
         return;
     }
 
@@ -223,56 +270,133 @@ async function handleSaveData(event) {
     transactionInfo.hidden = true;
 
     try {
-        const response = await fetch(`${API_BASE}/data`, {
+        const response = await fetch(`${API_BASE}/properties`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({ key, value }),
+            body: JSON.stringify({
+                property_id: propertyId,
+                description,
+                owner,
+            }),
         });
 
         const result = await response.json();
         if (!result.success) {
-            throw new Error(result.error || 'Ghi dữ liệu thất bại');
+            throw new Error(result.error || 'Lưu property thất bại');
         }
 
-        txHash.textContent = result.transaction.hash;
-        txHash.href = `https://testnet.nearblocks.io/txns/${result.transaction.hash}`;
-        txStatus.textContent = 'Success';
-        txExplanation.textContent = result.explanation;
-        transactionInfo.hidden = false;
-
-        keyInput.value = '';
-        valueInput.value = '';
-
-        showToast('Đã ghi dữ liệu lên blockchain thành công.', 'success');
+        setTransactionDetails(result.transaction.hash, result.explanation);
+        propertyForm.reset();
+        transferPropertyIdInput.value = propertyId;
+        showToast(
+            result.mode === 'create'
+                ? 'Đã tạo property mới trên blockchain.'
+                : 'Đã cập nhật property trên blockchain.',
+            'success'
+        );
         await refreshDashboard();
     } catch (error) {
-        showToast(`Lỗi ghi dữ liệu: ${error.message}`, 'error');
+        showToast(`Lỗi lưu property: ${error.message}`, 'error');
     } finally {
         setButtonLoading(saveBtn, false);
     }
 }
 
-async function handleDeleteData(key) {
-    if (!window.confirm(`Bạn có chắc muốn xóa key "${key}"?`)) {
+async function handleTransferProperty(event) {
+    event.preventDefault();
+
+    const propertyId = transferPropertyIdInput.value.trim();
+    const newOwner = newOwnerInput.value.trim();
+
+    if (!propertyId || !newOwner) {
+        showToast('Vui lòng nhập property_id và new owner.', 'error');
+        return;
+    }
+
+    setButtonLoading(transferBtn, true);
+
+    try {
+        const response = await fetch(`${API_BASE}/properties/${encodeURIComponent(propertyId)}/transfer`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ new_owner: newOwner }),
+        });
+
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error(result.error || 'Transfer owner thất bại');
+        }
+
+        setTransactionDetails(result.transaction.hash, result.explanation);
+        transferForm.reset();
+        showToast('Đã gửi giao dịch chuyển quyền sở hữu.', 'success');
+        await refreshDashboard();
+    } catch (error) {
+        showToast(`Lỗi transfer property: ${error.message}`, 'error');
+    } finally {
+        setButtonLoading(transferBtn, false);
+    }
+}
+
+async function handleDeleteProperty(propertyId) {
+    if (!window.confirm(`Bạn có chắc muốn xóa property "${propertyId}"?`)) {
         return;
     }
 
     try {
-        const response = await fetch(`${API_BASE}/data/${encodeURIComponent(key)}`, {
+        const response = await fetch(`${API_BASE}/properties/${encodeURIComponent(propertyId)}`, {
             method: 'DELETE',
         });
         const result = await response.json();
 
         if (!result.success) {
-            throw new Error(result.error || 'Xóa dữ liệu thất bại');
+            throw new Error(result.error || 'Xóa property thất bại');
         }
 
-        showToast('Đã gửi giao dịch xóa trạng thái.', 'success');
+        setTransactionDetails(result.transaction.hash, result.explanation);
+        showToast('Đã gửi giao dịch xóa property.', 'success');
         await refreshDashboard();
     } catch (error) {
-        showToast(`Lỗi xóa dữ liệu: ${error.message}`, 'error');
+        showToast(`Lỗi xóa property: ${error.message}`, 'error');
+    }
+}
+
+async function handleResetRegistry() {
+    const confirmed = window.confirm(
+        'Reset registry sẽ bỏ toàn bộ registry hiện tại để làm sạch state cũ không tương thích. Bạn có chắc muốn tiếp tục?'
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    setButtonLoading(resetBtn, true);
+
+    try {
+        const response = await fetch(`${API_BASE}/admin/reset`, {
+            method: 'POST',
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Reset registry thất bại');
+        }
+
+        propertyForm.reset();
+        transferForm.reset();
+        allProperties = [];
+        renderDataTable();
+        setTransactionDetails(result.transaction.hash, result.explanation);
+        showToast('Đã reset registry trên account hiện tại.', 'success');
+        await refreshDashboard();
+    } catch (error) {
+        showToast(`Lỗi reset registry: ${error.message}`, 'error');
+    } finally {
+        setButtonLoading(resetBtn, false);
     }
 }
 
@@ -284,10 +408,10 @@ async function exportJSON() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'near_data_export.json';
+        link.download = 'near_properties_export.json';
         link.click();
         URL.revokeObjectURL(url);
-        showToast('Đã xuất JSON để phục vụ phân tích.', 'success');
+        showToast('Đã xuất JSON của property registry.', 'success');
     } catch (error) {
         showToast(`Lỗi export JSON: ${error.message}`, 'error');
     }
@@ -301,17 +425,17 @@ async function exportCSV() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'near_data_export.csv';
+        link.download = 'near_properties_export.csv';
         link.click();
         URL.revokeObjectURL(url);
-        showToast('Đã xuất CSV để phục vụ phân tích.', 'success');
+        showToast('Đã xuất CSV của property registry.', 'success');
     } catch (error) {
         showToast(`Lỗi export CSV: ${error.message}`, 'error');
     }
 }
 
 async function refreshDashboard() {
-    await Promise.all([loadAnalysisSummary(), loadAllData()]);
+    await Promise.all([loadAnalysisSummary(), loadAllProperties()]);
 }
 
 document.addEventListener('DOMContentLoaded', init);

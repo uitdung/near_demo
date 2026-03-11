@@ -1,59 +1,140 @@
 use near_sdk::collections::UnorderedMap;
-use near_sdk::{env, near, PanicOnDefault};
+use near_sdk::{env, near, require, PanicOnDefault};
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone, Debug)]
-pub struct DataEntry {
-    pub key: String,
-    pub value: String,
-    pub sender: String,
+pub struct PropertyRecord {
+    pub property_id: String,
+    pub description: String,
+    pub owner: String,
     pub timestamp: u64,
+    pub updated_by: String,
 }
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
-pub struct KeyValueStore {
-    data: UnorderedMap<String, DataEntry>,
+pub struct PropertyRegistry {
+    properties: UnorderedMap<String, PropertyRecord>,
 }
 
 #[near]
-impl KeyValueStore {
+impl PropertyRegistry {
     #[init]
     pub fn new() -> Self {
         Self {
-            data: UnorderedMap::new(b"d"),
+            properties: Self::empty_registry(),
         }
     }
 
     #[payable]
-    pub fn set_data(&mut self, key: String, value: String) {
-        let sender = env::predecessor_account_id().to_string();
-        let timestamp = env::block_timestamp();
+    pub fn create_property(&mut self, property_id: String, description: String, owner: String) {
+        let property_id = Self::normalize_field(property_id, "property_id");
+        require!(
+            self.properties.get(&property_id).is_none(),
+            "Property already exists"
+        );
 
-        let entry = DataEntry {
-            key: key.clone(),
-            value,
-            sender,
-            timestamp,
-        };
-
-        self.data.insert(&key, &entry);
-    }
-
-    pub fn get_data(&self, key: String) -> Option<DataEntry> {
-        self.data.get(&key)
-    }
-
-    pub fn get_all_data(&self) -> Vec<DataEntry> {
-        self.data.iter().map(|(_, value)| value).collect()
+        let record = self.build_record(property_id.clone(), description, owner);
+        self.properties.insert(&property_id, &record);
     }
 
     #[payable]
-    pub fn delete_data(&mut self, key: String) {
-        self.data.remove(&key);
+    pub fn update_property(&mut self, property_id: String, description: String, owner: String) {
+        let property_id = Self::normalize_field(property_id, "property_id");
+        require!(
+            self.properties.get(&property_id).is_some(),
+            "Property not found"
+        );
+
+        let record = self.build_record(property_id.clone(), description, owner);
+        self.properties.insert(&property_id, &record);
     }
 
-    pub fn count(&self) -> u64 {
-        self.data.len()
+    #[payable]
+    pub fn transfer_property(&mut self, property_id: String, new_owner: String) {
+        let property_id = Self::normalize_field(property_id, "property_id");
+        let mut record = self
+            .properties
+            .get(&property_id)
+            .unwrap_or_else(|| env::panic_str("Property not found"));
+
+        record.owner = Self::normalize_field(new_owner, "new_owner");
+        record.timestamp = env::block_timestamp();
+        record.updated_by = env::predecessor_account_id().to_string();
+
+        self.properties.insert(&property_id, &record);
+    }
+
+    pub fn get_property(&self, property_id: String) -> Option<PropertyRecord> {
+        let property_id = property_id.trim().to_string();
+        if property_id.is_empty() {
+            return None;
+        }
+
+        self.properties.get(&property_id)
+    }
+
+    pub fn get_all_properties(&self) -> Vec<PropertyRecord> {
+        self.properties.iter().map(|(_, value)| value).collect()
+    }
+
+    pub fn get_properties_by_owner(&self, owner: String) -> Vec<PropertyRecord> {
+        let owner = owner.trim();
+        if owner.is_empty() {
+            return vec![];
+        }
+
+        self.properties
+            .iter()
+            .filter_map(|(_, value)| if value.owner == owner { Some(value) } else { None })
+            .collect()
+    }
+
+    #[payable]
+    pub fn delete_property(&mut self, property_id: String) {
+        let property_id = Self::normalize_field(property_id, "property_id");
+        require!(
+            self.properties.remove(&property_id).is_some(),
+            "Property not found"
+        );
+    }
+
+    pub fn count_properties(&self) -> u64 {
+        self.properties.len()
+    }
+
+    #[payable]
+    pub fn reset_registry(&mut self) {
+        self.assert_contract_owner();
+        self.properties = Self::empty_registry();
+    }
+
+    fn build_record(&self, property_id: String, description: String, owner: String) -> PropertyRecord {
+        PropertyRecord {
+            property_id,
+            description: Self::normalize_field(description, "description"),
+            owner: Self::normalize_field(owner, "owner"),
+            timestamp: env::block_timestamp(),
+            updated_by: env::predecessor_account_id().to_string(),
+        }
+    }
+
+    fn normalize_field(value: String, field_name: &str) -> String {
+        let trimmed = value.trim().to_string();
+        require!(!trimmed.is_empty(), &format!("{} cannot be empty", field_name));
+        trimmed
+    }
+
+    fn empty_registry() -> UnorderedMap<String, PropertyRecord> {
+        let mut prefix = b"property-registry:".to_vec();
+        prefix.extend_from_slice(&env::block_timestamp().to_le_bytes());
+        UnorderedMap::new(prefix)
+    }
+
+    fn assert_contract_owner(&self) {
+        require!(
+            env::predecessor_account_id() == env::current_account_id(),
+            "Only the contract account can reset the registry"
+        );
     }
 }

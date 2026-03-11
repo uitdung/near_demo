@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Phân tích Blockchain như một hệ cơ sở dữ liệu phân tán | NEAR Protocol Demo</title>
-  <meta name="description" content="Demo phân tích NEAR Protocol như một hệ cơ sở dữ liệu phân tán, tập trung vào state storage, transaction flow, sharding Nightshade và truy vấn dữ liệu.">
+  <title>Phân tích Blockchain như một hệ cơ sở dữ liệu phân tán | NEAR Property Registry</title>
+  <meta name="description"
+    content="Demo phân tích NEAR Protocol như một hệ cơ sở dữ liệu phân tán thông qua bài toán quản lý quyền sở hữu bất động sản, tập trung vào state storage, transaction flow, sharding Nightshade và truy vấn dữ liệu.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,15 +15,15 @@
   <div class="page-shell">
     <header class="hero card">
       <div class="hero-copy">
-        <span class="eyebrow">NEAR Protocol · Distributed Database Case Study</span>
+        <span class="eyebrow">NEAR Protocol · Property Ownership Registry</span>
         <h1>Phân tích Blockchain như một hệ cơ sở dữ liệu phân tán</h1>
         <p class="hero-text">
-          Demo này trình bày cách <strong>NEAR Protocol</strong> lưu trữ trạng thái, xử lý giao dịch,
-          hỗ trợ truy vấn dữ liệu và mở rộng bằng <strong>Nightshade sharding</strong>, đồng thời minh họa
-          một quy trình gần với <em>INSERT / SELECT / EXPORT</em> trong góc nhìn cơ sở dữ liệu.
+          Demo này dùng bài toán <strong>quản lý quyền sở hữu bất động sản</strong> để trình bày cách
+          <strong>NEAR Protocol</strong> lưu trữ trạng thái, xử lý giao dịch, hỗ trợ truy vấn dữ liệu và mở rộng bằng
+          <strong>Nightshade sharding</strong> dưới góc nhìn của một hệ cơ sở dữ liệu phân tán.
         </p>
         <div class="hero-chips">
-          <span class="chip">State = Database</span>
+          <span class="chip">Property Record = Row</span>
           <span class="chip">Transaction = Write</span>
           <span class="chip">View/RPC = Read</span>
           <span class="chip">Chunks + Shards = Scale</span>
@@ -43,7 +44,7 @@
             <strong id="contractId">-</strong>
           </article>
           <article class="metric-card">
-            <span class="metric-label">Current entries</span>
+            <span class="metric-label">Total properties</span>
             <strong id="totalCount">0</strong>
           </article>
           <article class="metric-card">
@@ -75,7 +76,7 @@
               <li><strong>Block</strong> gom các <em>chunks</em> từ nhiều shards.</li>
               <li><strong>Transaction</strong> là yêu cầu ghi dữ liệu có chữ ký.</li>
               <li><strong>Receipt</strong> là thông điệp nội bộ phục vụ thực thi.</li>
-              <li><strong>State</strong> của contract là phần dữ liệu được truy vấn như một cơ sở dữ liệu.</li>
+              <li><strong>State</strong> của contract là nơi lưu các bản ghi bất động sản hiện tại.</li>
             </ul>
           </article>
           <article class="info-panel">
@@ -97,31 +98,54 @@
       <section class="card demo-section">
         <div class="section-heading">
           <span class="section-kicker">Phần 3</span>
-          <h2>Demo thao tác dữ liệu</h2>
-          <p>Phần này minh họa trực tiếp thao tác ghi, đọc và xuất dữ liệu trên NEAR Testnet.</p>
+          <h2>Demo property registry</h2>
+          <p>Phần này minh họa trực tiếp thao tác tạo, cập nhật, chuyển chủ sở hữu và xuất dữ liệu trên NEAR Testnet.</p>
         </div>
 
         <div class="demo-grid">
           <section class="subcard form-section">
-            <h3>Ghi dữ liệu mẫu lên blockchain</h3>
+            <h3>Tạo hoặc cập nhật bất động sản</h3>
             <p class="subtle-text">
               Khi bấm lưu, ứng dụng gửi một <strong>change transaction</strong> đến smart contract.
-              Đây là tương đương gần với thao tác <em>INSERT/UPDATE</em> trong hệ cơ sở dữ liệu.
+              Nếu <code>property_id</code> chưa tồn tại, thao tác này tương đương <em>INSERT</em>.
+              Nếu đã tồn tại, thao tác này đóng vai trò gần với <em>UPDATE</em>.
             </p>
-            <form id="dataForm" class="data-form">
+            <form id="propertyForm" class="data-form">
               <div class="form-group">
-                <label for="keyInput">Key</label>
-                <input type="text" id="keyInput" placeholder="Ví dụ: student_01" required>
+                <label for="propertyIdInput">Property ID</label>
+                <input type="text" id="propertyIdInput" placeholder="Ví dụ: PROP_001" required>
               </div>
               <div class="form-group">
-                <label for="valueInput">Value</label>
-                <input type="text" id="valueInput" placeholder="Ví dụ: Nguyễn Tuấn Dũng" required>
+                <label for="descriptionInput">Description</label>
+                <input type="text" id="descriptionInput" placeholder="Ví dụ: 12 Nguyễn Huệ, 120m²" required>
+                </div>
+                <div class="form-group">
+                  <label for="ownerInput">Owner</label>
+                  <input type="text" id="ownerInput" placeholder="Ví dụ: alice.testnet" required>
               </div>
               <button type="submit" class="btn btn-primary" id="saveBtn">
-                <span class="btn-text">Ghi lên blockchain</span>
+                <span class="btn-text">Lưu property lên blockchain</span>
                 <span class="btn-loading" hidden>Đang xử lý...</span>
-              </button>
-            </form>
+                </button>
+                </form>
+                
+                <div class="subcard transfer-panel">
+                  <h4>Chuyển quyền sở hữu</h4>
+                  <form id="transferForm" class="data-form compact-form">
+                    <div class="form-group">
+                      <label for="transferPropertyIdInput">Property ID</label>
+                      <input type="text" id="transferPropertyIdInput" placeholder="Ví dụ: PROP_001" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="newOwnerInput">New Owner</label>
+                      <input type="text" id="newOwnerInput" placeholder="Ví dụ: bob.testnet" required>
+                    </div>
+                    <button type="submit" class="btn btn-secondary" id="transferBtn">
+                      <span class="btn-text">Transfer owner</span>
+                      <span class="btn-loading" hidden>Đang xử lý...</span>
+                    </button>
+                  </form>
+            </div>
 
             <div id="transactionInfo" class="transaction-info" hidden>
               <h4>Thông tin giao dịch</h4>
@@ -151,6 +175,10 @@
                 <span class="analysis-label">Raw state pairs</span>
                 <strong id="rawPairs">-</strong>
               </article>
+              <article class="analysis-item">
+                <span class="analysis-label">Total owners</span>
+                <strong id="ownerCount">-</strong>
+              </article>
               <article class="analysis-item wide">
                 <span class="analysis-label">Latest state note</span>
                 <p id="storageNote">-</p>
@@ -158,6 +186,7 @@
             </div>
             <div class="section-actions">
               <button class="btn btn-secondary" id="refreshBtn">Làm mới dữ liệu</button>
+              <button class="btn btn-danger" id="resetBtn">Reset registry</button>
               <button class="btn btn-secondary" id="exportJsonBtn">Xuất JSON</button>
               <button class="btn btn-secondary" id="exportCsvBtn">Xuất CSV</button>
             </div>
@@ -169,11 +198,11 @@
         <div class="section-heading inline-heading">
           <div>
             <span class="section-kicker">Phần 4</span>
-            <h2>Dữ liệu đã ghi trong contract state</h2>
+            <h2>Dữ liệu bất động sản trong contract state</h2>
             <p>Danh sách dưới đây được đọc qua <strong>view method</strong>, nên không tạo block mới và không yêu cầu gas từ người xem.</p>
           </div>
           <div class="stats" id="stats">
-            <span>Total entries: <strong id="statsCount">0</strong></span>
+            <span>Total properties: <strong id="statsCount">0</strong></span>
           </div>
         </div>
 
@@ -181,9 +210,10 @@
           <table class="data-table" id="dataTable">
             <thead>
               <tr>
-                <th>Key</th>
-                <th>Value</th>
-                <th>Sender</th>
+                <th>Property ID</th>
+                <th>Description</th>
+                <th>Owner</th>
+                <th>Updated By</th>
                 <th>Timestamp</th>
                 <th>Actions</th>
               </tr>
@@ -193,8 +223,8 @@
         </div>
 
         <div id="emptyState" class="empty-state" hidden>
-          <p>Chưa có bản ghi nào trong contract state.</p>
-          <p>Hãy thêm một mẫu dữ liệu để minh họa quá trình ghi và truy vấn trên NEAR.</p>
+          <p>Chưa có bất động sản nào trong contract state.</p>
+          <p>Hãy thêm một property mẫu để minh họa quá trình ghi, cập nhật và truy vấn trên NEAR.</p>
         </div>
       </section>
 
@@ -206,19 +236,19 @@
         <div class="evidence-grid">
           <article class="evidence-card">
             <h3>INSERT</h3>
-            <p>Form ghi dữ liệu tạo giao dịch có chữ ký để thay đổi contract state.</p>
+            <p>Tạo property mới là một giao dịch có chữ ký ghi bản ghi mới vào contract state.</p>
+          </article>
+          <article class="evidence-card">
+            <h3>UPDATE / TRANSFER</h3>
+            <p>Cập nhật mô tả hoặc chuyển chủ sở hữu là thao tác rewrite state hiện tại của cùng một property_id.</p>
           </article>
           <article class="evidence-card">
             <h3>SELECT</h3>
-            <p>Bảng dữ liệu và số lượng bản ghi được lấy bằng view method / RPC query.</p>
-          </article>
-          <article class="evidence-card">
-            <h3>Immutability</h3>
-            <p>Lịch sử giao dịch vẫn tồn tại dù trạng thái hiện tại có thể thay đổi bởi update hoặc delete.</p>
+            <p>Bảng dữ liệu, số lượng property và truy vấn theo owner đều được lấy bằng view method / RPC query.</p>
           </article>
           <article class="evidence-card">
             <h3>Export</h3>
-            <p>JSON/CSV giúp chuyển dữ liệu on-chain sang dạng dễ phân tích ngoài chuỗi.</p>
+            <p>JSON/CSV giúp chuyển dữ liệu on-chain sang dạng dễ phân tích ngoài chuỗi cho báo cáo thực nghiệm.</p>
           </article>
         </div>
       </section>
