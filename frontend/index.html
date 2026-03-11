@@ -148,18 +148,76 @@
             </div>
 
             <div id="transactionInfo" class="transaction-info" hidden>
-              <h4>Thông tin giao dịch</h4>
+              <h4>Blockchain Transaction Details</h4>
+              <p id="txSemanticNote" class="transaction-side-note">-</p>
               <div class="info-row">
-                <span>Hash</span>
+                <span>Transaction hash</span>
                 <a id="txHash" href="#" target="_blank" class="hash-link"></a>
               </div>
               <div class="info-row">
-                <span>Trạng thái</span>
+                <span>Status</span>
                 <span id="txStatus" class="status-badge"></span>
               </div>
               <div class="info-row">
-                <span>Giải thích</span>
-                <span id="txExplanation">-</span>
+                <span>Operation</span>
+                <span id="txOperation">-</span>
+                </div>
+                <div class="info-row">
+                  <span>Method</span>
+                  <span id="txMethod">-</span>
+                </div>
+                <div class="info-row">
+                  <span>Network</span>
+                  <span id="txNetwork">-</span>
+                </div>
+                <div class="info-row">
+                  <span>Signer</span>
+                  <span id="txSigner">-</span>
+                </div>
+                <div class="info-row">
+                  <span>Receiver</span>
+                  <span id="txReceiver">-</span>
+                </div>
+                <div class="info-row">
+                  <span>Block hash</span>
+                  <span id="txBlockHash">-</span>
+                </div>
+                <div class="info-row">
+                  <span>Gas burned</span>
+                  <span id="txGasUsed">-</span>
+                </div>
+              <div class="info-row">
+                  <span>Request start</span>
+                  <span id="txRequestStart">-</span>
+                  </div>
+                  <div class="info-row">
+                    <span>Response received</span>
+                    <span id="txResponseReceived">-</span>
+                  </div>
+                  <div class="info-row">
+                    <span>Duration</span>
+                    <strong id="txDuration">-</strong>
+                  </div>
+                  <div class="info-row">
+                    <span>Observed block time</span>
+                    <span id="txObservedBlockTime">-</span>
+                  </div>
+                  <div class="info-row">
+                    <span>Observed block height</span>
+                    <span id="txObservedBlockHeight">-</span>
+                  </div>
+                  <div class="info-row">
+                  <span>Receipt count</span>
+                  <span id="txReceiptCount">-</span>
+                  </div>
+                  <div class="info-row">
+                    <span>Explorer</span>
+                    <a id="txExplorer" href="#" target="_blank" class="hash-link">Open transaction</a>
+                  </div>
+                  <div class="info-row">
+                    <span>Explanation</span>
+                    <span id="txExplanation">-</span>
+                </div>
               </div>
             </div>
           </section>
@@ -190,6 +248,70 @@
               <button class="btn btn-secondary" id="exportJsonBtn">Xuất JSON</button>
               <button class="btn btn-secondary" id="exportCsvBtn">Xuất CSV</button>
             </div>
+<div class="subcard batch-panel">
+  <h4>JSON batch import benchmark</h4>
+  <p class="subtle-text">Import file JSON để cập nhật nhiều property bằng <strong>một contract transaction duy
+      nhất</strong>.
+    Backend sẽ gửi toàn bộ records vào method <code>batch_upsert_properties</code> để benchmark phản ánh throughput theo
+    số
+    records xử lý trên mỗi transaction, thay vì một transaction cho từng record.</p>
+  <div class="batch-input-row">
+    <input type="file" id="batchJsonFileInput" accept="application/json,.json">
+    <button class="btn btn-primary" id="batchImportBtn" disabled>
+      <span class="btn-text">Chạy batch transaction</span>
+      <span class="btn-loading" hidden>Đang import...</span>
+    </button>
+  </div>
+  <p id="batchValidationMessage" class="subtle-text">Chưa có file JSON nào được chọn.</p>
+  <div class="batch-summary-grid">
+    <article class="analysis-item"><span class="analysis-label">JSON items</span><strong id="batchItemCount">0</strong>
+    </article>
+    <article class="analysis-item"><span class="analysis-label">Transactions sent</span><strong
+        id="batchTransactionsSubmitted">0</strong>
+    </article>
+    <article class="analysis-item"><span class="analysis-label">Created</span><strong id="batchCreatedCount">0</strong>
+    </article>
+    <article class="analysis-item"><span class="analysis-label">Updated</span><strong id="batchUpdatedCount">0</strong>
+    </article>
+    <article class="analysis-item"><span class="analysis-label">Success</span><strong id="batchSuccessCount">0</strong>
+    </article>
+    <article class="analysis-item"><span class="analysis-label">Failure</span><strong id="batchFailureCount">0</strong>
+    </article>
+    <article class="analysis-item"><span class="analysis-label">Duration</span><strong id="batchDuration">-</strong>
+    </article>
+    <article class="analysis-item"><span class="analysis-label">Avg / item</span><strong
+        id="batchAverageDuration">-</strong></article>
+    <article class="analysis-item"><span class="analysis-label">Record throughput</span><strong
+        id="batchThroughput">-</strong>
+    </article>
+    <article class="analysis-item"><span class="analysis-label">Tx throughput</span><strong
+        id="batchTransactionThroughput">-</strong>
+    </article>
+  </div>
+  <div class="batch-preview" id="batchPreview">
+    <h5>Preview</h5>
+    <pre id="batchPreviewContent">[]</pre>
+  </div>
+  <div id="batchResultsSection" class="batch-results" hidden>
+    <h5>Kết quả batch import</h5>
+    <div class="table-container">
+      <table class="data-table batch-results-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Property ID</th>
+            <th>Status</th>
+            <th>Duration</th>
+            <th>Shared Tx Hash</th>
+            <th>Gas</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody id="batchResultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
           </section>
         </div>
       </section>
@@ -227,6 +349,50 @@
           <p>Hãy thêm một property mẫu để minh họa quá trình ghi, cập nhật và truy vấn trên NEAR.</p>
         </div>
       </section>
+
+      <div id="propertyDetailModal" class="modal" hidden>
+        <div class="modal-backdrop" data-close-modal="true"></div>
+        <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="propertyDetailTitle">
+          <button type="button" class="modal-close" id="propertyDetailCloseBtn" aria-label="Đóng cửa sổ chi tiết">×</button>
+          <div class="modal-header">
+            <span class="section-kicker">Blockchain detail</span>
+            <h3 id="propertyDetailTitle">Property detail</h3>
+            <p id="propertyDetailSubtitle" class="subtle-text">-</p>
+          </div>
+          <div class="modal-grid">
+            <section class="modal-card">
+              <h4>Current on-chain state</h4>
+              <div class="modal-info-list">
+                <div class="info-row"><span>Property ID</span><span id="detailPropertyId">-</span></div>
+                <div class="info-row"><span>Description</span><span id="detailDescription">-</span></div>
+                <div class="info-row"><span>Owner</span><span id="detailOwner">-</span></div>
+                <div class="info-row"><span>Updated by</span><span id="detailUpdatedBy">-</span></div>
+                <div class="info-row"><span>Timestamp</span><span id="detailTimestamp">-</span></div>
+              </div>
+            </section>
+            <section class="modal-card">
+              <h4>Blockchain context</h4>
+              <div class="modal-info-list">
+                <div class="info-row"><span>Network</span><span id="detailNetwork">-</span></div>
+                <div class="info-row"><span>Contract</span><span id="detailContractId">-</span></div>
+                <div class="info-row"><span>RPC</span><span id="detailRpcUrl">-</span></div>
+                <div class="info-row"><span>Observed block height</span><span id="detailBlockHeight">-</span></div>
+                <div class="info-row"><span>Observed block hash</span><span id="detailBlockHash">-</span></div>
+                <div class="info-row"><span>Raw state pairs</span><span id="detailRawPairs">-</span></div>
+                <div class="info-row"><span>Contract explorer</span><a id="detailContractExplorer" href="#" target="_blank"
+                    class="hash-link">Open contract</a></div>
+                <div class="info-row"><span>Updater explorer</span><a id="detailUpdaterExplorer" href="#" target="_blank"
+                    class="hash-link">Open updater</a></div>
+              </div>
+            </section>
+            <section class="modal-card modal-card-wide">
+              <h4>History and interpretation</h4>
+              <p id="detailHistoryNote" class="subtle-text">-</p>
+              <div id="detailHistoryTimeline" class="history-timeline"></div>
+            </section>
+          </div>
+        </div>
+      </div>
 
       <section class="card state-section">
         <div class="section-heading">

@@ -101,6 +101,50 @@ export async function callChangeFunction(
     });
 }
 
+function isRetriableChangeError(error) {
+    const message = String(error?.message || error || '').toLowerCase();
+    return [
+        'nonce',
+        'transaction has expired',
+        'timeout',
+        '429',
+        'too many requests',
+    ].some((fragment) => message.includes(fragment));
+}
+
+function delay(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export async function callChangeFunctionWithRetry(
+    methodName,
+    args = {},
+    options = {}
+) {
+    const {
+        gas = '300000000000000',
+        deposit = '0',
+        retries = 4,
+        retryDelayMs = 250,
+    } = options;
+
+    let lastError = null;
+
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+        try {
+            return await callChangeFunction(methodName, args, gas, deposit);
+        } catch (error) {
+            lastError = error;
+            if (attempt === retries || !isRetriableChangeError(error)) {
+                throw error;
+            }
+            await delay(retryDelayMs * (attempt + 1));
+        }
+    }
+
+    throw lastError;
+}
+
 export async function queryContractState() {
     const provider = masterAccount?.connection.provider;
     if (!provider) {
@@ -153,16 +197,63 @@ export async function getAccountInfo(accountId) {
     };
 }
 
+export async function getBlockByHash(blockHash) {
+    const provider = masterAccount?.connection.provider;
+    if (!provider) {
+        throw new Error('Provider not initialized');
+    }
+
+    const block = await provider.block({ blockId: blockHash });
+
+    return {
+        height: block.header?.height,
+        hash: block.header?.hash,
+        timestampNs: block.header?.timestamp_nanosec ?? block.header?.timestamp,
+        timestampIso: block.header?.timestamp_nanosec
+            ? new Date(Number(block.header.timestamp_nanosec) / 1_000_000).toISOString()
+            : undefined,
+    };
+}
+
 export async function getAnalysisSummary() {
-    const [properties, state, accountInfo, totalProperties] = await Promise.all([
-        callViewFunction('get_all_properties'),
-        queryContractState(),
+    const [accountInfo, totalProperties] = await Promise.all([
         getAccountInfo(config.contractId),
         callViewFunction('count_properties'),
     ]);
 
-    const latestProperty = properties.length > 0 ? properties[properties.length - 1] : null;
-    const uniqueOwners = new Set(properties.map((property) => property.owner)).size;
+    let state = {
+        blockHeight: null,
+        blockHash: null,
+        rawPairs: null,
+        preview: [],
+        note: 'Raw contract state preview is unavailable in this summary response.',
+    };
+
+    let latestProperty = null;
+    let uniqueOwners = null;
+    let contractNote = 'Summary uses lightweight metadata so the endpoint stays responsive even when contract state is large.';
+
+    try {
+        const properties = await callViewFunction('get_all_properties');
+        latestProperty = properties.length > 0 ? properties[properties.length - 1] : null;
+        uniqueOwners = new Set(properties.map((property) => property.owner)).size;
+        contractNote = 'Summary includes full property-derived metrics because the current contract state fit within the RPC view limits.';
+    } catch (error) {
+        contractNote = `Full property list was skipped for summary generation: ${error.message}`;
+    }
+
+    try {
+        const rawState = await queryContractState();
+        state = {
+            blockHeight: rawState.blockHeight,
+            blockHash: rawState.blockHash,
+            rawPairs: rawState.values.length,
+            preview: rawState.values.slice(0, 5),
+            note: 'Raw state preview was loaded successfully from the RPC view_state endpoint.',
+        };
+    } catch (error) {
+        state.note = `Raw state preview was skipped because the contract state is too large for a full view_state response: ${error.message}`;
+    }
 
     return {
         title: 'NEAR property ownership registry',
@@ -172,13 +263,9 @@ export async function getAnalysisSummary() {
             totalProperties,
             totalOwners: uniqueOwners,
             latestProperty,
+            note: contractNote,
         },
-        state: {
-            blockHeight: state.blockHeight,
-            blockHash: state.blockHash,
-            rawPairs: state.values.length,
-            preview: state.values.slice(0, 5),
-        },
+        state,
         storage: {
             usageBytes: accountInfo.storageUsage,
             note: 'Contract state stores property records on-chain, and storage usage helps explain storage staking and persistent state costs on NEAR.',
@@ -225,8 +312,10 @@ export default {
     getNetworkConfig,
     callViewFunction,
     callChangeFunction,
+    callChangeFunctionWithRetry,
     queryContractState,
     getTransactionStatus,
     getAccountInfo,
+    getBlockByHash,
     getAnalysisSummary,
 };

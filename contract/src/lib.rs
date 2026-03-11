@@ -1,6 +1,14 @@
 use near_sdk::collections::UnorderedMap;
 use near_sdk::{env, near, require, PanicOnDefault};
 
+#[near(serializers = [json])]
+#[derive(Clone, Debug)]
+pub struct PropertyInput {
+    pub property_id: String,
+    pub description: String,
+    pub owner: String,
+}
+
 #[near(serializers = [borsh, json])]
 #[derive(Clone, Debug)]
 pub struct PropertyRecord {
@@ -9,6 +17,14 @@ pub struct PropertyRecord {
     pub owner: String,
     pub timestamp: u64,
     pub updated_by: String,
+}
+
+#[near(serializers = [json])]
+#[derive(Clone, Debug)]
+pub struct BatchUpsertSummary {
+    pub processed: u64,
+    pub created: u64,
+    pub updated: u64,
 }
 
 #[near(contract_state)]
@@ -39,6 +55,13 @@ impl PropertyRegistry {
     }
 
     #[payable]
+    pub fn upsert_property(&mut self, property_id: String, description: String, owner: String) {
+        let property_id = Self::normalize_field(property_id, "property_id");
+        let record = self.build_record(property_id.clone(), description, owner);
+        self.properties.insert(&property_id, &record);
+    }
+
+    #[payable]
     pub fn update_property(&mut self, property_id: String, description: String, owner: String) {
         let property_id = Self::normalize_field(property_id, "property_id");
         require!(
@@ -48,6 +71,33 @@ impl PropertyRegistry {
 
         let record = self.build_record(property_id.clone(), description, owner);
         self.properties.insert(&property_id, &record);
+    }
+
+    #[payable]
+    pub fn batch_upsert_properties(&mut self, items: Vec<PropertyInput>) -> BatchUpsertSummary {
+        require!(!items.is_empty(), "items cannot be empty");
+
+        let mut created = 0_u64;
+        let mut updated = 0_u64;
+
+        for item in items {
+            let property_id = Self::normalize_field(item.property_id, "property_id");
+            let already_exists = self.properties.get(&property_id).is_some();
+            let record = self.build_record(property_id.clone(), item.description, item.owner);
+            self.properties.insert(&property_id, &record);
+
+            if already_exists {
+                updated += 1;
+            } else {
+                created += 1;
+            }
+        }
+
+        BatchUpsertSummary {
+            processed: created + updated,
+            created,
+            updated,
+        }
     }
 
     #[payable]

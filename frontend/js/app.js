@@ -28,6 +28,21 @@ const transactionInfo = document.getElementById('transactionInfo');
 const txHash = document.getElementById('txHash');
 const txStatus = document.getElementById('txStatus');
 const txExplanation = document.getElementById('txExplanation');
+const txSemanticNote = document.getElementById('txSemanticNote');
+const txOperation = document.getElementById('txOperation');
+const txMethod = document.getElementById('txMethod');
+const txNetwork = document.getElementById('txNetwork');
+const txSigner = document.getElementById('txSigner');
+const txReceiver = document.getElementById('txReceiver');
+const txBlockHash = document.getElementById('txBlockHash');
+const txGasUsed = document.getElementById('txGasUsed');
+const txReceiptCount = document.getElementById('txReceiptCount');
+const txRequestStart = document.getElementById('txRequestStart');
+const txResponseReceived = document.getElementById('txResponseReceived');
+const txDuration = document.getElementById('txDuration');
+const txObservedBlockTime = document.getElementById('txObservedBlockTime');
+const txObservedBlockHeight = document.getElementById('txObservedBlockHeight');
+const txExplorer = document.getElementById('txExplorer');
 const connectionStatus = document.getElementById('connectionStatus');
 const toastContainer = document.getElementById('toastContainer');
 const networkId = document.getElementById('networkId');
@@ -38,6 +53,43 @@ const rawPairs = document.getElementById('rawPairs');
 const ownerCount = document.getElementById('ownerCount');
 const storageNote = document.getElementById('storageNote');
 const conceptGrid = document.getElementById('conceptGrid');
+const propertyDetailModal = document.getElementById('propertyDetailModal');
+const propertyDetailCloseBtn = document.getElementById('propertyDetailCloseBtn');
+const propertyDetailTitle = document.getElementById('propertyDetailTitle');
+const propertyDetailSubtitle = document.getElementById('propertyDetailSubtitle');
+const detailPropertyId = document.getElementById('detailPropertyId');
+const detailDescription = document.getElementById('detailDescription');
+const detailOwner = document.getElementById('detailOwner');
+const detailUpdatedBy = document.getElementById('detailUpdatedBy');
+const detailTimestamp = document.getElementById('detailTimestamp');
+const detailNetwork = document.getElementById('detailNetwork');
+const detailContractId = document.getElementById('detailContractId');
+const detailRpcUrl = document.getElementById('detailRpcUrl');
+const detailBlockHeight = document.getElementById('detailBlockHeight');
+const detailBlockHash = document.getElementById('detailBlockHash');
+const detailRawPairs = document.getElementById('detailRawPairs');
+const detailContractExplorer = document.getElementById('detailContractExplorer');
+const detailUpdaterExplorer = document.getElementById('detailUpdaterExplorer');
+const detailHistoryNote = document.getElementById('detailHistoryNote');
+const detailHistoryTimeline = document.getElementById('detailHistoryTimeline');
+const batchJsonFileInput = document.getElementById('batchJsonFileInput');
+const batchImportBtn = document.getElementById('batchImportBtn');
+const batchValidationMessage = document.getElementById('batchValidationMessage');
+const batchItemCount = document.getElementById('batchItemCount');
+const batchTransactionsSubmitted = document.getElementById('batchTransactionsSubmitted');
+const batchCreatedCount = document.getElementById('batchCreatedCount');
+const batchUpdatedCount = document.getElementById('batchUpdatedCount');
+const batchSuccessCount = document.getElementById('batchSuccessCount');
+const batchFailureCount = document.getElementById('batchFailureCount');
+const batchDuration = document.getElementById('batchDuration');
+const batchAverageDuration = document.getElementById('batchAverageDuration');
+const batchThroughput = document.getElementById('batchThroughput');
+const batchTransactionThroughput = document.getElementById('batchTransactionThroughput');
+const batchPreviewContent = document.getElementById('batchPreviewContent');
+const batchResultsSection = document.getElementById('batchResultsSection');
+const batchResultsBody = document.getElementById('batchResultsBody');
+
+let batchItems = [];
 
 async function init() {
     updateConnectionStatus('connecting');
@@ -65,6 +117,19 @@ async function init() {
     resetBtn.addEventListener('click', handleResetRegistry);
     exportJsonBtn.addEventListener('click', exportJSON);
     exportCsvBtn.addEventListener('click', exportCSV);
+    propertyDetailCloseBtn.addEventListener('click', closePropertyDetailModal);
+    propertyDetailModal.addEventListener('click', (event) => {
+        if (event.target.dataset.closeModal === 'true') {
+            closePropertyDetailModal();
+        }
+    });
+    batchJsonFileInput.addEventListener('change', handleBatchFileSelection);
+    batchImportBtn.addEventListener('click', handleBatchImport);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !propertyDetailModal.hidden) {
+            closePropertyDetailModal();
+        }
+    });
 }
 
 function updateConnectionStatus(status) {
@@ -128,12 +193,202 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function setTransactionDetails(transactionHash, explanation) {
-    txHash.textContent = transactionHash;
-    txHash.href = `https://testnet.nearblocks.io/txns/${transactionHash}`;
-    txStatus.textContent = 'Success';
-    txExplanation.textContent = explanation;
+function formatGas(value) {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric) ? `${numeric.toLocaleString('vi-VN')} gas` : '-';
+}
+
+function formatCount(value) {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric) ? numeric.toLocaleString('vi-VN') : '-';
+}
+
+function formatDurationMs(value) {
+    const numeric = Number(value || 0);
+    return Number.isFinite(numeric) ? `${numeric.toLocaleString('vi-VN')} ms` : '-';
+}
+
+function formatDatetime(isoString) {
+    if (!isoString) return '-';
+    try {
+        return new Date(isoString).toLocaleString('vi-VN');
+    } catch {
+        return isoString;
+    }
+}
+
+function updateBatchSummary(summary = {}) {
+    batchItemCount.textContent = formatCount(summary.totalItems || batchItems.length || 0);
+    batchTransactionsSubmitted.textContent = formatCount(summary.transactionsSubmitted || 0);
+    batchCreatedCount.textContent = formatCount(summary.createdCount || 0);
+    batchUpdatedCount.textContent = formatCount(summary.updatedCount || 0);
+    batchSuccessCount.textContent = formatCount(summary.successCount || 0);
+    batchFailureCount.textContent = formatCount(summary.failureCount || 0);
+    batchDuration.textContent = summary.durationMs ? formatDurationMs(summary.durationMs) : '-';
+    batchAverageDuration.textContent = summary.averageDurationMs ? formatDurationMs(summary.averageDurationMs) : '-';
+    batchThroughput.textContent = summary.throughputPerSecond ? `${summary.throughputPerSecond} records/s` : '-';
+    batchTransactionThroughput.textContent = summary.transactionThroughputPerSecond ? `${summary.transactionThroughputPerSecond} tx/s` : '-';
+}
+
+function setBatchValidationState(message, isValid = false) {
+    batchValidationMessage.textContent = message;
+    batchImportBtn.disabled = !isValid;
+}
+
+function renderBatchPreview(items = []) {
+    batchPreviewContent.textContent = JSON.stringify(items.slice(0, 5), null, 2);
+}
+
+function renderBatchResults(results = []) {
+    batchResultsBody.innerHTML = '';
+
+    if (!results.length) {
+        batchResultsSection.hidden = true;
+        return;
+    }
+
+    batchResultsSection.hidden = false;
+    results.forEach((item, index) => {
+        const row = document.createElement('tr');
+        const transactionHash = item.transaction?.hash
+            ? `<a href="${escapeHtml(item.transaction.explorerUrl || '#')}" target="_blank" class="hash-link">${escapeHtml(truncate(item.transaction.hash, 20))}</a>`
+            : '-';
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${escapeHtml(item.property_id || '-')}</td>
+            <td><span class="status-badge ${item.success ? '' : 'status-badge-error'}">${item.success ? 'Success' : 'Failed'}</span></td>
+            <td>${escapeHtml(formatDurationMs(item.durationMs))}</td>
+            <td>${transactionHash}</td>
+            <td>${escapeHtml(item.transaction ? formatGas(item.transaction.gasBurned) : '-')}</td>
+            <td>${escapeHtml(item.error || '-')}</td>
+        `;
+        batchResultsBody.appendChild(row);
+    });
+}
+
+function setTransactionDetails(transaction = {}, explanation = '') {
+    txHash.textContent = transaction.hash || '-';
+    txHash.href = transaction.explorerUrl || `https://testnet.nearblocks.io/txns/${transaction.hash}`;
+    txStatus.textContent = transaction.status || 'Success';
+    txExplanation.textContent = explanation || '-';
+    txSemanticNote.textContent = `${transaction.operationType || 'Blockchain write'} là một signed transaction đi qua RPC, validator, execution outcome và cập nhật contract state trên NEAR.`;
+    txOperation.textContent = transaction.operationType || '-';
+    txMethod.textContent = transaction.methodName || '-';
+    txNetwork.textContent = transaction.networkId || '-';
+    txSigner.textContent = transaction.signerId || '-';
+    txReceiver.textContent = transaction.receiverId || '-';
+    txBlockHash.textContent = transaction.blockHash || '-';
+    txGasUsed.textContent = formatGas(transaction.gasBurned);
+    txReceiptCount.textContent = formatCount(transaction.receiptCount);
+    txRequestStart.textContent = transaction.requestStartedAt ? formatDatetime(new Date(transaction.requestStartedAt).toISOString()) : '-';
+    txResponseReceived.textContent = transaction.requestRespondedAt ? formatDatetime(new Date(transaction.requestRespondedAt).toISOString()) : '-';
+    txDuration.textContent = formatDurationMs(transaction.durationMs);
+    txObservedBlockTime.textContent = formatDatetime(transaction.observedBlockTimestamp);
+    txObservedBlockHeight.textContent = transaction.observedBlockHeight ? formatCount(transaction.observedBlockHeight) : '-';
+    txExplorer.href = transaction.explorerUrl || '#';
     transactionInfo.hidden = false;
+}
+
+function closePropertyDetailModal() {
+    propertyDetailModal.hidden = true;
+    document.body.style.overflow = '';
+}
+
+function openPropertyDetailModal() {
+    propertyDetailModal.hidden = false;
+    document.body.style.overflow = 'hidden';
+}
+
+function validateBatchItems(items) {
+    if (!Array.isArray(items)) {
+        throw new Error('JSON phải là một array các property objects');
+    }
+
+    if (items.length === 0) {
+        throw new Error('JSON không được rỗng');
+    }
+
+    return items.map((item, index) => {
+        const propertyId = String(item?.property_id || '').trim();
+        const description = String(item?.description || '').trim();
+        const owner = String(item?.owner || '').trim();
+
+        if (!propertyId || !description || !owner) {
+            throw new Error(`Item ${index + 1} thiếu property_id, description hoặc owner`);
+        }
+
+        return {
+            property_id: propertyId,
+            description,
+            owner,
+        };
+    });
+}
+
+async function handleBatchFileSelection(event) {
+    const file = event.target.files?.[0];
+    batchItems = [];
+    batchResultsBody.innerHTML = '';
+    batchResultsSection.hidden = true;
+    updateBatchSummary({ totalItems: 0, successCount: 0, failureCount: 0 });
+
+    if (!file) {
+        renderBatchPreview([]);
+        setBatchValidationState('Chưa có file JSON nào được chọn.', false);
+        return;
+    }
+
+    try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        batchItems = validateBatchItems(parsed);
+        renderBatchPreview(batchItems);
+        updateBatchSummary({ totalItems: batchItems.length, successCount: 0, failureCount: 0, transactionsSubmitted: 0, createdCount: 0, updatedCount: 0 });
+        setBatchValidationState(`Đã nạp ${batchItems.length} items từ file ${file.name}. Sẵn sàng chạy một batch transaction để upsert toàn bộ records.`, true);
+    } catch (error) {
+        batchItems = [];
+        renderBatchPreview([]);
+        setBatchValidationState(`File JSON không hợp lệ: ${error.message}`, false);
+        showToast(`Lỗi file JSON: ${error.message}`, 'error');
+    }
+}
+
+async function handleBatchImport() {
+    if (!batchItems.length) {
+        showToast('Hãy chọn file JSON hợp lệ trước khi import.', 'error');
+        return;
+    }
+
+    setButtonLoading(batchImportBtn, true);
+    batchImportBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${API_BASE}/batch/properties/import-json`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                items: batchItems,
+            }),
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Batch import thất bại');
+        }
+
+        updateBatchSummary(result.summary);
+        renderBatchResults(result.results || []);
+        batchValidationMessage.textContent = result.explanation || 'Batch contract import completed.';
+        showToast(`Batch transaction hoàn tất: ${result.summary.successCount}/${result.summary.totalItems} records thành công trong ${result.summary.transactionsSubmitted} transaction.`, 'success');
+        await refreshDashboard();
+    } catch (error) {
+        showToast(`Lỗi batch import: ${error.message}`, 'error');
+    } finally {
+        setButtonLoading(batchImportBtn, false);
+        batchImportBtn.disabled = batchItems.length === 0;
+    }
 }
 
 async function loadAnalysisSummary() {
@@ -155,13 +410,19 @@ async function loadAnalysisSummary() {
 function renderAnalysisSummary() {
     if (!analysisSummary) return;
 
-    totalCount.textContent = analysisSummary.contract.totalProperties;
-    statsCount.textContent = analysisSummary.contract.totalProperties;
+    totalCount.textContent = analysisSummary.contract.totalProperties ?? 0;
+    statsCount.textContent = analysisSummary.contract.totalProperties ?? 0;
     storageUsage.textContent = `${analysisSummary.storage.usageBytes} bytes`;
     blockHeight.textContent = analysisSummary.state.blockHeight || '-';
-    rawPairs.textContent = analysisSummary.state.rawPairs || 0;
-    ownerCount.textContent = analysisSummary.contract.totalOwners || 0;
-    storageNote.textContent = analysisSummary.storage.note;
+    rawPairs.textContent = analysisSummary.state.rawPairs ?? 'N/A';
+    ownerCount.textContent = analysisSummary.contract.totalOwners ?? 'N/A';
+
+    const notes = [
+        analysisSummary.storage.note,
+        analysisSummary.contract.note,
+        analysisSummary.state.note,
+    ].filter(Boolean);
+    storageNote.textContent = notes.join(' ');
 
     conceptGrid.innerHTML = '';
     analysisSummary.concepts.forEach((concept) => {
@@ -222,6 +483,7 @@ function renderDataTable() {
             <td>${formatTimestamp(property.timestamp)}</td>
             <td>
                 <div class="table-actions">
+                    <button class="btn btn-secondary detail-btn" data-property-id="${escapeHtml(property.property_id)}">Blockchain detail</button>
                     <button class="btn btn-secondary edit-btn" data-property-id="${escapeHtml(property.property_id)}">Sửa</button>
                     <button class="btn btn-secondary transfer-btn" data-property-id="${escapeHtml(property.property_id)}" data-owner="${escapeHtml(property.owner)}">Transfer</button>
                     <button class="btn btn-danger delete-btn" data-property-id="${escapeHtml(property.property_id)}">Xóa</button>
@@ -229,6 +491,10 @@ function renderDataTable() {
             </td>
         `;
         dataBody.appendChild(row);
+    });
+
+    document.querySelectorAll('.detail-btn').forEach((button) => {
+        button.addEventListener('click', () => handleViewPropertyBlockchainDetail(button.dataset.propertyId));
     });
 
     document.querySelectorAll('.edit-btn').forEach((button) => {
@@ -287,7 +553,7 @@ async function handleSaveProperty(event) {
             throw new Error(result.error || 'Lưu property thất bại');
         }
 
-        setTransactionDetails(result.transaction.hash, result.explanation);
+        setTransactionDetails(result.transaction, result.explanation);
         propertyForm.reset();
         transferPropertyIdInput.value = propertyId;
         showToast(
@@ -331,7 +597,7 @@ async function handleTransferProperty(event) {
             throw new Error(result.error || 'Transfer owner thất bại');
         }
 
-        setTransactionDetails(result.transaction.hash, result.explanation);
+        setTransactionDetails(result.transaction, result.explanation);
         transferForm.reset();
         showToast('Đã gửi giao dịch chuyển quyền sở hữu.', 'success');
         await refreshDashboard();
@@ -357,7 +623,7 @@ async function handleDeleteProperty(propertyId) {
             throw new Error(result.error || 'Xóa property thất bại');
         }
 
-        setTransactionDetails(result.transaction.hash, result.explanation);
+        setTransactionDetails(result.transaction, result.explanation);
         showToast('Đã gửi giao dịch xóa property.', 'success');
         await refreshDashboard();
     } catch (error) {
@@ -390,13 +656,71 @@ async function handleResetRegistry() {
         transferForm.reset();
         allProperties = [];
         renderDataTable();
-        setTransactionDetails(result.transaction.hash, result.explanation);
+        setTransactionDetails(result.transaction, result.explanation);
         showToast('Đã reset registry trên account hiện tại.', 'success');
         await refreshDashboard();
     } catch (error) {
         showToast(`Lỗi reset registry: ${error.message}`, 'error');
     } finally {
         setButtonLoading(resetBtn, false);
+    }
+}
+
+function renderPropertyHistoryTimeline(history = {}) {
+    detailHistoryTimeline.innerHTML = '';
+
+    const timeline = Array.isArray(history.timeline) ? history.timeline : [];
+    if (timeline.length === 0) {
+        detailHistoryTimeline.innerHTML = '<p class="subtle-text">Chưa có timeline để hiển thị.</p>';
+        return;
+    }
+
+    timeline.forEach((item) => {
+        const entry = document.createElement('article');
+        entry.className = 'history-entry';
+        entry.innerHTML = `
+            <div class="history-entry-head">
+                <strong>${escapeHtml(item.label || 'Snapshot')}</strong>
+                <span>${escapeHtml(formatTimestamp(item.timestamp || ''))}</span>
+            </div>
+            <p><strong>Action:</strong> ${escapeHtml(item.action || '-')}</p>
+            <p><strong>Actor:</strong> ${escapeHtml(item.actor || '-')}</p>
+            <p>${escapeHtml(item.detail || '')}</p>
+        `;
+        detailHistoryTimeline.appendChild(entry);
+    });
+}
+
+async function handleViewPropertyBlockchainDetail(propertyId) {
+    try {
+        const response = await fetch(`${API_BASE}/properties/${encodeURIComponent(propertyId)}/blockchain-detail`);
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Không thể tải blockchain detail');
+        }
+
+        const { property, blockchain, history } = result.data;
+        propertyDetailTitle.textContent = `Property ${property.property_id}`;
+        propertyDetailSubtitle.textContent = 'Readonly blockchain context for the current property snapshot on NEAR.';
+        detailPropertyId.textContent = property.property_id;
+        detailDescription.textContent = property.description;
+        detailOwner.textContent = property.owner;
+        detailUpdatedBy.textContent = property.updated_by;
+        detailTimestamp.textContent = formatTimestamp(property.timestamp);
+        detailNetwork.textContent = blockchain.networkId;
+        detailContractId.textContent = blockchain.contractId;
+        detailRpcUrl.textContent = blockchain.rpcUrl;
+        detailBlockHeight.textContent = formatCount(blockchain.latestObservedBlockHeight);
+        detailBlockHash.textContent = blockchain.latestObservedBlockHash;
+        detailRawPairs.textContent = formatCount(blockchain.rawStatePairs);
+        detailContractExplorer.href = blockchain.explorer.contract;
+        detailUpdaterExplorer.href = blockchain.explorer.updater;
+        detailHistoryNote.textContent = history.note || '-';
+        renderPropertyHistoryTimeline(history);
+        openPropertyDetailModal();
+    } catch (error) {
+        showToast(`Lỗi tải blockchain detail: ${error.message}`, 'error');
     }
 }
 

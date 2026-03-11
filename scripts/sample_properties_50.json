@@ -1,0 +1,252 @@
+[
+  {
+    "property_id": "BATCH_PROP_0001",
+    "description": "Lo 0001 - Khu do thi benchmark zone 1, dien tich 80m2",
+    "owner": "owner0001.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0002",
+    "description": "Lo 0002 - Khu do thi benchmark zone 2, dien tich 81m2",
+    "owner": "owner0002.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0003",
+    "description": "Lo 0003 - Khu do thi benchmark zone 3, dien tich 82m2",
+    "owner": "owner0003.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0004",
+    "description": "Lo 0004 - Khu do thi benchmark zone 4, dien tich 83m2",
+    "owner": "owner0004.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0005",
+    "description": "Lo 0005 - Khu do thi benchmark zone 5, dien tich 84m2",
+    "owner": "owner0005.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0006",
+    "description": "Lo 0006 - Khu do thi benchmark zone 6, dien tich 85m2",
+    "owner": "owner0006.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0007",
+    "description": "Lo 0007 - Khu do thi benchmark zone 7, dien tich 86m2",
+    "owner": "owner0007.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0008",
+    "description": "Lo 0008 - Khu do thi benchmark zone 8, dien tich 87m2",
+    "owner": "owner0008.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0009",
+    "description": "Lo 0009 - Khu do thi benchmark zone 9, dien tich 88m2",
+    "owner": "owner0009.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0010",
+    "description": "Lo 0010 - Khu do thi benchmark zone 10, dien tich 89m2",
+    "owner": "owner0010.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0011",
+    "description": "Lo 0011 - Khu do thi benchmark zone 1, dien tich 90m2",
+    "owner": "owner0011.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0012",
+    "description": "Lo 0012 - Khu do thi benchmark zone 2, dien tich 91m2",
+    "owner": "owner0012.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0013",
+    "description": "Lo 0013 - Khu do thi benchmark zone 3, dien tich 92m2",
+    "owner": "owner0013.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0014",
+    "description": "Lo 0014 - Khu do thi benchmark zone 4, dien tich 93m2",
+    "owner": "owner0014.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0015",
+    "description": "Lo 0015 - Khu do thi benchmark zone 5, dien tich 94m2",
+    "owner": "owner0015.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0016",
+    "description": "Lo 0016 - Khu do thi benchmark zone 6, dien tich 95m2",
+    "owner": "owner0016.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0017",
+    "description": "Lo 0017 - Khu do thi benchmark zone 7, dien tich 96m2",
+    "owner": "owner0017.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0018",
+    "description": "Lo 0018 - Khu do thi benchmark zone 8, dien tich 97m2",
+    "owner": "owner0018.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0019",
+    "description": "Lo 0019 - Khu do thi benchmark zone 9, dien tich 98m2",
+    "owner": "owner0019.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0020",
+    "description": "Lo 0020 - Khu do thi benchmark zone 10, dien tich 99m2",
+    "owner": "owner0020.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0021",
+    "description": "Lo 0021 - Khu do thi benchmark zone 1, dien tich 100m2",
+    "owner": "owner0021.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0022",
+    "description": "Lo 0022 - Khu do thi benchmark zone 2, dien tich 80m2",
+    "owner": "owner0022.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0023",
+    "description": "Lo 0023 - Khu do thi benchmark zone 3, dien tich 81m2",
+    "owner": "owner0023.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0024",
+    "description": "Lo 0024 - Khu do thi benchmark zone 4, dien tich 82m2",
+    "owner": "owner0024.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0025",
+    "description": "Lo 0025 - Khu do thi benchmark zone 5, dien tich 83m2",
+    "owner": "owner0025.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0026",
+    "description": "Lo 0026 - Khu do thi benchmark zone 6, dien tich 84m2",
+    "owner": "owner0026.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0027",
+    "description": "Lo 0027 - Khu do thi benchmark zone 7, dien tich 85m2",
+    "owner": "owner0027.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0028",
+    "description": "Lo 0028 - Khu do thi benchmark zone 8, dien tich 86m2",
+    "owner": "owner0028.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0029",
+    "description": "Lo 0029 - Khu do thi benchmark zone 9, dien tich 87m2",
+    "owner": "owner0029.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0030",
+    "description": "Lo 0030 - Khu do thi benchmark zone 10, dien tich 88m2",
+    "owner": "owner0030.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0031",
+    "description": "Lo 0031 - Khu do thi benchmark zone 1, dien tich 89m2",
+    "owner": "owner0031.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0032",
+    "description": "Lo 0032 - Khu do thi benchmark zone 2, dien tich 90m2",
+    "owner": "owner0032.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0033",
+    "description": "Lo 0033 - Khu do thi benchmark zone 3, dien tich 91m2",
+    "owner": "owner0033.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0034",
+    "description": "Lo 0034 - Khu do thi benchmark zone 4, dien tich 92m2",
+    "owner": "owner0034.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0035",
+    "description": "Lo 0035 - Khu do thi benchmark zone 5, dien tich 93m2",
+    "owner": "owner0035.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0036",
+    "description": "Lo 0036 - Khu do thi benchmark zone 6, dien tich 94m2",
+    "owner": "owner0036.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0037",
+    "description": "Lo 0037 - Khu do thi benchmark zone 7, dien tich 95m2",
+    "owner": "owner0037.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0038",
+    "description": "Lo 0038 - Khu do thi benchmark zone 8, dien tich 96m2",
+    "owner": "owner0038.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0039",
+    "description": "Lo 0039 - Khu do thi benchmark zone 9, dien tich 97m2",
+    "owner": "owner0039.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0040",
+    "description": "Lo 0040 - Khu do thi benchmark zone 10, dien tich 98m2",
+    "owner": "owner0040.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0041",
+    "description": "Lo 0041 - Khu do thi benchmark zone 1, dien tich 99m2",
+    "owner": "owner0041.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0042",
+    "description": "Lo 0042 - Khu do thi benchmark zone 2, dien tich 100m2",
+    "owner": "owner0042.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0043",
+    "description": "Lo 0043 - Khu do thi benchmark zone 3, dien tich 80m2",
+    "owner": "owner0043.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0044",
+    "description": "Lo 0044 - Khu do thi benchmark zone 4, dien tich 81m2",
+    "owner": "owner0044.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0045",
+    "description": "Lo 0045 - Khu do thi benchmark zone 5, dien tich 82m2",
+    "owner": "owner0045.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0046",
+    "description": "Lo 0046 - Khu do thi benchmark zone 6, dien tich 83m2",
+    "owner": "owner0046.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0047",
+    "description": "Lo 0047 - Khu do thi benchmark zone 7, dien tich 84m2",
+    "owner": "owner0047.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0048",
+    "description": "Lo 0048 - Khu do thi benchmark zone 8, dien tich 85m2",
+    "owner": "owner0048.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0049",
+    "description": "Lo 0049 - Khu do thi benchmark zone 9, dien tich 86m2",
+    "owner": "owner0049.testnet"
+  },
+  {
+    "property_id": "BATCH_PROP_0050",
+    "description": "Lo 0050 - Khu do thi benchmark zone 10, dien tich 87m2",
+    "owner": "owner0050.testnet"
+  }
+]

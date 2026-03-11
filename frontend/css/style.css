@@ -245,7 +245,7 @@ body::before {
 
 .architecture-grid,
 .demo-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .info-panel ul {
@@ -269,18 +269,19 @@ body::before {
 
 .data-form {
   display: grid;
-  gap: 16px;
-  margin-top: 16px;
+  gap: 12px;
+    margin-top: 12px;
 }
 
 .form-group {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .form-group label {
   color: var(--text-secondary);
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .form-group input {
@@ -288,8 +289,9 @@ body::before {
   border: 1px solid rgba(155, 183, 255, 0.14);
   background: rgba(10, 18, 34, 0.85);
   color: var(--text-primary);
-  border-radius: var(--radius-md);
-  padding: 14px 16px;
+  border-radius: 12px;
+    padding: 10px 12px;
+    min-height: 42px;
   transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
 }
 
@@ -308,10 +310,12 @@ body::before {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   border: none;
-  border-radius: var(--radius-md);
-  padding: 13px 18px;
+  border-radius: 12px;
+    padding: 10px 14px;
+    min-height: 40px;
+    font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
   transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition), background var(--transition);
@@ -330,7 +334,7 @@ body::before {
 .btn-primary {
   color: #04111f;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
-  box-shadow: 0 18px 30px rgba(87, 184, 255, 0.22);
+  box-shadow: 0 12px 22px rgba(87, 184, 255, 0.18);
 }
 
 .btn-secondary {
@@ -347,24 +351,36 @@ body::before {
 
 .transaction-info {
   display: grid;
-  gap: 10px;
-  margin-top: 18px;
-  padding: 18px;
-  border-radius: var(--radius-lg);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px 14px;
+    margin-top: 14px;
+    padding: 14px;
+    border-radius: 18px;
   background: rgba(124, 246, 214, 0.07);
   border: 1px solid rgba(124, 246, 214, 0.16);
 }
 
 .transaction-info h4 {
   color: var(--accent);
+  grid-column: 1 / -1;
 }
 
+.transaction-side-note {
+  color: var(--text-secondary);
+  padding: 10px 12px;
+    border-radius: 12px;
+  background: rgba(87, 184, 255, 0.08);
+  border: 1px solid rgba(87, 184, 255, 0.14);
+  grid-column: 1 / -1;
+}
 .info-row {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
-  border-bottom: 1px solid rgba(155, 183, 255, 0.12);
-  padding-bottom: 8px;
+  align-items: flex-start;
+    gap: 10px;
+    border-bottom: 1px solid rgba(155, 183, 255, 0.1);
+    padding-bottom: 6px;
+    min-width: 0;
 }
 
 .info-row:last-child {
@@ -393,22 +409,86 @@ body::before {
   color: var(--accent);
 }
 
+.status-badge-error {
+  background: rgba(255, 141, 157, 0.14);
+  color: #ffd5dd;
+}
 .analysis-stack {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin-top: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 12px;
+    gap: 12px;
 }
 
 .analysis-item.wide {
   grid-column: 1 / -1;
 }
 
+.analysis-item {
+  padding: 14px;
+}
 .section-actions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
+.batch-panel {
+  margin-top: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.batch-input-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.batch-input-row input[type="file"] {
+  flex: 1 1 220px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.batch-summary-grid {
+  display: grid;
+  gap: 10px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.batch-preview,
+.batch-results {
+  border-radius: 18px;
+  border: 1px solid rgba(155, 183, 255, 0.12);
+  background: rgba(11, 21, 37, 0.92);
+  padding: 14px;
+}
+
+.batch-preview pre {
+  margin-top: 10px;
+  max-height: 260px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text-secondary);
+}
+.batch-concurrency-control {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.batch-concurrency-control input {
+  width: 92px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(155, 183, 255, 0.16);
+  background: rgba(5, 12, 24, 0.88);
+  color: var(--text-primary);
+}
 .inline-heading {
   display: flex;
   align-items: end;
@@ -463,12 +543,175 @@ body::before {
   color: var(--text-secondary);
 }
 
+.table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.table-actions .btn {
+  padding: 8px 10px;
+    min-height: 34px;
+    font-size: 0.8rem;
+  }
+  
+  .form-section,
+  .analysis-section,
+  .transfer-panel {
+    gap: 10px;
+  }
+  
+  .form-section>.subtle-text,
+  .analysis-section>.subtle-text,
+  .batch-panel>.subtle-text {
+    font-size: 0.94rem;
+  }
+  
+  .form-section #propertyForm {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+  }
+  
+  .form-section #propertyForm button {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+  
+  .compact-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+  
+  .compact-form button {
+    grid-column: 1 / -1;
+    justify-self: start;
+}
 .empty-state {
   padding: 36px 20px 8px;
   text-align: center;
   color: var(--text-secondary);
 }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal[hidden] {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(3, 8, 16, 0.75);
+  backdrop-filter: blur(8px);
+}
+
+.modal-dialog {
+  position: relative;
+  width: min(980px, 100%);
+  max-height: min(88vh, 920px);
+  overflow: auto;
+  border-radius: var(--radius-xl);
+  padding: 28px;
+  background: rgba(7, 16, 29, 0.96);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid rgba(155, 183, 255, 0.2);
+  background: rgba(87, 184, 255, 0.1);
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.modal-header {
+  margin-bottom: 20px;
+}
+
+.modal-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.modal-card {
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  border: 1px solid var(--border);
+  background: rgba(11, 21, 37, 0.92);
+}
+
+.modal-card-wide {
+  grid-column: 1 / -1;
+}
+
+.modal-card h4 {
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+
+.modal-info-list {
+  display: grid;
+  gap: 10px;
+}
+
+.modal-info-list .info-row {
+  align-items: flex-start;
+}
+
+.modal-info-list .info-row> :first-child {
+  flex: 0 0 150px;
+  min-width: 0;
+  color: var(--text-muted);
+}
+
+.modal-info-list .info-row> :last-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: right;
+}
+
+.modal-info-list .hash-link {
+  max-width: 100%;
+  white-space: normal;
+}
+
+.history-timeline {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.history-entry {
+  border-radius: var(--radius-md);
+  padding: 14px;
+  background: rgba(87, 184, 255, 0.08);
+  border: 1px solid rgba(87, 184, 255, 0.14);
+}
+
+.history-entry-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
 .evidence-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -573,7 +816,9 @@ body::before {
   .concept-grid,
   .analysis-stack,
   .evidence-grid,
-  .inline-heading {
+    .inline-heading,
+    .modal-grid,
+    .batch-summary-grid {
     grid-template-columns: 1fr;
     display: grid;
   }
@@ -583,12 +828,15 @@ body::before {
   }
 
   .section-actions,
-  .hero-chips {
+    .hero-chips,
+    .batch-input-row,
+    .table-actions {
     flex-direction: column;
   }
 
   .btn,
-  .section-actions .btn {
+    .section-actions .btn,
+    .batch-input-row .btn {
     width: 100%;
   }
 
@@ -597,11 +845,16 @@ body::before {
     display: none;
   }
 
-  .info-row {
+    .info-row,
+    .history-entry-head {
     flex-direction: column;
   }
 
   .hash-link {
     max-width: 100%;
   }
+
+    .modal-dialog {
+      padding: 20px;
+    }
 }
