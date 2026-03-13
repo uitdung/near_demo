@@ -2,7 +2,9 @@
  * NEAR property-registry demo frontend.
  */
 
-const API_BASE = '/api';
+const API_BASE = window.location.port === '8081'
+    ? 'http://localhost:3000/api'
+    : '/api';
 
 let allProperties = [];
 let analysisSummary = null;
@@ -483,6 +485,7 @@ function renderDataTable() {
             <td>${formatTimestamp(property.timestamp)}</td>
             <td>
                 <div class="table-actions">
+                    <button class="btn btn-secondary history-btn" data-property-id="${escapeHtml(property.property_id)}">Lịch sử</button>
                     <button class="btn btn-secondary detail-btn" data-property-id="${escapeHtml(property.property_id)}">Blockchain detail</button>
                     <button class="btn btn-secondary edit-btn" data-property-id="${escapeHtml(property.property_id)}">Sửa</button>
                     <button class="btn btn-secondary transfer-btn" data-property-id="${escapeHtml(property.property_id)}" data-owner="${escapeHtml(property.owner)}">Transfer</button>
@@ -491,6 +494,10 @@ function renderDataTable() {
             </td>
         `;
         dataBody.appendChild(row);
+    });
+
+    document.querySelectorAll('.history-btn').forEach((button) => {
+        button.addEventListener('click', () => handleViewPropertyHistory(button.dataset.propertyId));
     });
 
     document.querySelectorAll('.detail-btn').forEach((button) => {
@@ -677,7 +684,18 @@ function renderPropertyHistoryTimeline(history = {}) {
 
     timeline.forEach((item) => {
         const entry = document.createElement('article');
-        entry.className = 'history-entry';
+        const kindClass = item.kind ? `history-entry-${item.kind}` : '';
+        entry.className = `history-entry ${kindClass}`.trim();
+        const ownerLine = item.owner
+            ? `<p><strong>Owner:</strong> ${escapeHtml(item.owner)}</p>`
+            : '';
+        const previousOwnerLine = item.previousOwner
+            ? `<p><strong>Owner cũ:</strong> ${escapeHtml(item.previousOwner)}</p>`
+            : '';
+        const txLine = item.transactionHash
+            ? `<p><strong>Tx:</strong> <a href="${escapeHtml(item.explorerUrl || '#')}" target="_blank" class="hash-link">${escapeHtml(truncate(item.transactionHash, 24))}</a></p>`
+            : '';
+
         entry.innerHTML = `
             <div class="history-entry-head">
                 <strong>${escapeHtml(item.label || 'Snapshot')}</strong>
@@ -685,10 +703,38 @@ function renderPropertyHistoryTimeline(history = {}) {
             </div>
             <p><strong>Action:</strong> ${escapeHtml(item.action || '-')}</p>
             <p><strong>Actor:</strong> ${escapeHtml(item.actor || '-')}</p>
+            ${previousOwnerLine}
+            ${ownerLine}
+            ${txLine}
             <p>${escapeHtml(item.detail || '')}</p>
         `;
         detailHistoryTimeline.appendChild(entry);
     });
+}
+
+function applyPropertyDetailView({ property, blockchain, history, mode = 'detail' }) {
+    propertyDetailTitle.textContent = mode === 'history'
+        ? `Lịch sử property ${property.property_id}`
+        : `Property ${property.property_id}`;
+    propertyDetailSubtitle.textContent = mode === 'history'
+        ? 'Timeline được dựng từ transaction history để minh họa lúc khởi tạo và các lần đổi chủ sở hữu.'
+        : 'Readonly blockchain context for the current property snapshot on NEAR.';
+    detailPropertyId.textContent = property.property_id;
+    detailDescription.textContent = property.description;
+    detailOwner.textContent = property.owner;
+    detailUpdatedBy.textContent = property.updated_by;
+    detailTimestamp.textContent = formatTimestamp(property.timestamp);
+    detailNetwork.textContent = blockchain.networkId || '-';
+    detailContractId.textContent = blockchain.contractId || '-';
+    detailRpcUrl.textContent = blockchain.rpcUrl || '-';
+    detailBlockHeight.textContent = blockchain.latestObservedBlockHeight ? formatCount(blockchain.latestObservedBlockHeight) : '-';
+    detailBlockHash.textContent = blockchain.latestObservedBlockHash || '-';
+    detailRawPairs.textContent = blockchain.rawStatePairs ? formatCount(blockchain.rawStatePairs) : '-';
+    detailContractExplorer.href = blockchain.explorer?.contract || `${blockchain.explorerBaseUrl || '#'}${blockchain.contractId ? `/address/${blockchain.contractId}` : ''}`;
+    detailUpdaterExplorer.href = blockchain.explorer?.updater || (property.updated_by && blockchain.explorerBaseUrl ? `${blockchain.explorerBaseUrl}/address/${property.updated_by}` : '#');
+    detailHistoryNote.textContent = history.note || '-';
+    renderPropertyHistoryTimeline(history);
+    openPropertyDetailModal();
 }
 
 async function handleViewPropertyBlockchainDetail(propertyId) {
@@ -700,27 +746,30 @@ async function handleViewPropertyBlockchainDetail(propertyId) {
             throw new Error(result.error || 'Không thể tải blockchain detail');
         }
 
-        const { property, blockchain, history } = result.data;
-        propertyDetailTitle.textContent = `Property ${property.property_id}`;
-        propertyDetailSubtitle.textContent = 'Readonly blockchain context for the current property snapshot on NEAR.';
-        detailPropertyId.textContent = property.property_id;
-        detailDescription.textContent = property.description;
-        detailOwner.textContent = property.owner;
-        detailUpdatedBy.textContent = property.updated_by;
-        detailTimestamp.textContent = formatTimestamp(property.timestamp);
-        detailNetwork.textContent = blockchain.networkId;
-        detailContractId.textContent = blockchain.contractId;
-        detailRpcUrl.textContent = blockchain.rpcUrl;
-        detailBlockHeight.textContent = formatCount(blockchain.latestObservedBlockHeight);
-        detailBlockHash.textContent = blockchain.latestObservedBlockHash;
-        detailRawPairs.textContent = formatCount(blockchain.rawStatePairs);
-        detailContractExplorer.href = blockchain.explorer.contract;
-        detailUpdaterExplorer.href = blockchain.explorer.updater;
-        detailHistoryNote.textContent = history.note || '-';
-        renderPropertyHistoryTimeline(history);
-        openPropertyDetailModal();
+        applyPropertyDetailView({
+            ...result.data,
+            mode: 'detail',
+        });
     } catch (error) {
         showToast(`Lỗi tải blockchain detail: ${error.message}`, 'error');
+    }
+}
+
+async function handleViewPropertyHistory(propertyId) {
+    try {
+        const response = await fetch(`${API_BASE}/properties/${encodeURIComponent(propertyId)}/history`);
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Không thể tải lịch sử property');
+        }
+
+        applyPropertyDetailView({
+            ...result.data,
+            mode: 'history',
+        });
+    } catch (error) {
+        showToast(`Lỗi tải lịch sử property: ${error.message}`, 'error');
     }
 }
 

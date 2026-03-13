@@ -5,10 +5,13 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
 import { initNear, getContractId, getNetworkConfig } from './near.js';
 import routes from './routes.js';
 
-dotenv.config();
+const envPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env');
+dotenv.config({ path: envPath });
 
 const app = express();
 const PORT = process.env.PORT || 3000;

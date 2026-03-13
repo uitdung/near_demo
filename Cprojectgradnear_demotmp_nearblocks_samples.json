@@ -1,0 +1,48 @@
+{
+    "cursor": "1079222534",
+    "txns": [
+        {
+            "id": "1079222534",
+            "receipt_id": "HgsJsRLYaUoDaJdqrgww8fVGDejf8Zn6LxZP6gHPWzwG",
+            "predecessor_account_id": "system",
+            "receiver_account_id": "tdungck.testnet",
+            "receipt_kind": "ACTION",
+            "receipt_block": {
+                "block_hash": "H44JnaByexBzabSgCBqEdSDvp9htgWsyeXRsvEgunK8w",
+                "block_height": 240863036,
+                "block_timestamp": 1773393485730405400
+            },
+            "receipt_outcome": {
+                "gas_burnt": 223182562500,
+                "tokens_burnt": 0,
+                "executor_account_id": "tdungck.testnet",
+                "status": true
+            },
+            "transaction_hash": "CpfGfRiWRKXJaz9h886E7ucKP3GMcbuc3KvfoRjHbKxB",
+            "included_in_block_hash": "EWHEcmpSHyCEsawroRhxm3ZLFXVDePpEJVRG6jfcgaxk",
+            "block_timestamp": "1773393485041559046",
+            "block": {
+                "block_height": 240863035
+            },
+            "receipt_conversion_tokens_burnt": "30820707164400000000",
+            "actions": [
+                {
+                    "action": "TRANSFER",
+                    "method": null,
+                    "deposit": 2.99309541318283e+22,
+                    "fee": 0,
+                    "args": null
+                }
+            ],
+            "actions_agg": {
+                "deposit": 0
+            },
+            "outcomes": {
+                "status": true
+            },
+            "outcomes_agg": {
+                "transaction_fee": 188687282500500000000
+            }
+        }
+    ]
+}

@@ -706,6 +706,20 @@ body::before {
   border: 1px solid rgba(87, 184, 255, 0.14);
 }
 
+.history-entry-creation {
+  background: rgba(124, 246, 214, 0.09);
+  border-color: rgba(124, 246, 214, 0.22);
+}
+
+.history-entry-transfer {
+  background: rgba(164, 125, 255, 0.12);
+  border-color: rgba(164, 125, 255, 0.2);
+}
+
+.history-entry-snapshot {
+  background: rgba(255, 217, 120, 0.08);
+  border-color: rgba(255, 217, 120, 0.2);
+}
 .history-entry-head {
   display: flex;
   justify-content: space-between;

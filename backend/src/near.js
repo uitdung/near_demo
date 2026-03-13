@@ -7,8 +7,11 @@
 
 import { connect, keyStores, utils } from 'near-api-js';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import path from 'path';
 
-dotenv.config();
+const envPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.env');
+dotenv.config({ path: envPath });
 
 const config = {
     networkId: process.env.NEAR_NETWORK || 'testnet',
@@ -19,6 +22,8 @@ const config = {
     contractId: process.env.NEAR_CONTRACT_ID,
     masterAccount: process.env.NEAR_MASTER_ACCOUNT,
     masterPrivateKey: process.env.NEAR_MASTER_PRIVATE_KEY,
+    nearBlocksApiBaseUrl: process.env.NEARBLOCKS_API_BASE_URL || 'https://api.nearblocks.io/v1',
+    nearBlocksApiKey: process.env.NEARBLOCKS_API_KEY,
 };
 
 let nearConnection = null;
@@ -67,7 +72,136 @@ export function getNetworkConfig() {
         helperUrl: config.helperUrl,
         contractId: config.contractId,
         masterAccount: config.masterAccount,
+        nearBlocksApiBaseUrl: config.nearBlocksApiBaseUrl,
+        hasNearBlocksApiKey: Boolean(config.nearBlocksApiKey),
     };
+}
+
+function getNearBlocksHeaders() {
+    const headers = {
+        Accept: 'application/json',
+    };
+
+    if (config.nearBlocksApiKey) {
+        headers.Authorization = `Bearer ${config.nearBlocksApiKey}`;
+    }
+
+    return headers;
+}
+
+function normalizeTxCollection(payload) {
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+
+    if (Array.isArray(payload?.txns)) {
+        return payload.txns;
+    }
+
+    if (Array.isArray(payload?.transactions)) {
+        return payload.transactions;
+    }
+
+    return [];
+}
+
+export async function fetchAccountTransactions(accountId, options = {}) {
+    const {
+        methodName,
+        cursor,
+        perPage = 100,
+        order = 'desc',
+    } = options;
+
+    const params = new URLSearchParams();
+    params.set('per_page', String(perPage));
+    params.set('order', order);
+
+    if (methodName) {
+        params.set('method', methodName);
+    }
+
+    if (cursor) {
+        params.set('cursor', cursor);
+    }
+
+    const requestUrl = `${config.nearBlocksApiBaseUrl}/account/${encodeURIComponent(accountId)}/txns?${params.toString()}`;
+    const response = await fetch(requestUrl, {
+        headers: getNearBlocksHeaders(),
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('[NearBlocks] Request failed', {
+            accountId,
+            methodName: methodName || null,
+            status: response.status,
+            requestUrl,
+            errorBody,
+        });
+        throw new Error(`NearBlocks request failed with status ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const items = normalizeTxCollection(payload);
+    const nextCursor = payload?.cursor || payload?.next_cursor || payload?.next || null;
+
+    return {
+        items,
+        cursor: nextCursor,
+    };
+}
+
+export async function fetchContractTransactionHistory(options = {}) {
+    const {
+        methodNames = [],
+        maxPages = 3,
+        perPage = 100,
+    } = options;
+
+    const allItems = [];
+    const uniqueMethods = methodNames.filter(Boolean);
+    const methodsToFetch = uniqueMethods.length ? uniqueMethods : [undefined];
+
+    console.log('[NearBlocks] Begin contract history fetch', {
+        contractId: config.contractId,
+        methodsToFetch,
+        maxPages,
+        perPage,
+    });
+
+    for (const methodName of methodsToFetch) {
+        let cursor = null;
+        for (let page = 0; page < maxPages; page += 1) {
+            const response = await fetchAccountTransactions(config.contractId, {
+                methodName,
+                cursor,
+                perPage,
+                order: 'desc',
+            });
+            allItems.push(...response.items);
+
+            if (!response.cursor || response.items.length === 0) {
+                break;
+            }
+
+            cursor = response.cursor;
+        }
+    }
+
+    const deduped = [];
+    const seenHashes = new Set();
+    for (const item of allItems) {
+        const txHash = item?.transaction_hash || item?.hash || item?.transaction?.hash;
+        const dedupeKey = txHash || JSON.stringify(item);
+        if (seenHashes.has(dedupeKey)) {
+            continue;
+        }
+        seenHashes.add(dedupeKey);
+        deduped.push(item);
+    }
+
+    return deduped;
 }
 
 export async function callViewFunction(methodName, args = {}) {
@@ -318,4 +452,6 @@ export default {
     getAccountInfo,
     getBlockByHash,
     getAnalysisSummary,
+    fetchAccountTransactions,
+    fetchContractTransactionHistory,
 };

@@ -10,6 +10,8 @@
         "deploy:contract": "node scripts/deploy-contract.js",
         "start": "docker compose up --build",
         "start:detached": "docker compose up --build -d",
+        "start:backend": "npm --prefix backend start",
+        "start:frontend": "npx -y http-server ./frontend -p 8081 -c-1",
         "stop": "docker compose down",
         "logs": "docker compose logs -f",
         "rebuild": "docker compose down && docker compose up --build",
