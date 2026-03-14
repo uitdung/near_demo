@@ -107,9 +107,8 @@ function normalizeTxCollection(payload) {
 
 export async function fetchAccountTransactions(accountId, options = {}) {
     const {
-        methodName,
         cursor,
-        perPage = 100,
+        perPage = 50,
         order = 'desc',
     } = options;
 
@@ -117,15 +116,11 @@ export async function fetchAccountTransactions(accountId, options = {}) {
     params.set('per_page', String(perPage));
     params.set('order', order);
 
-    if (methodName) {
-        params.set('method', methodName);
-    }
-
     if (cursor) {
         params.set('cursor', cursor);
     }
 
-    const requestUrl = `${config.nearBlocksApiBaseUrl}/account/${encodeURIComponent(accountId)}/txns?${params.toString()}`;
+    const requestUrl = `${config.nearBlocksApiBaseUrl}/account/${encodeURIComponent(accountId)}/txns-only?${params.toString()}`;
     const response = await fetch(requestUrl, {
         headers: getNearBlocksHeaders(),
     });
@@ -134,7 +129,6 @@ export async function fetchAccountTransactions(accountId, options = {}) {
         const errorBody = await response.text();
         console.error('[NearBlocks] Request failed', {
             accountId,
-            methodName: methodName || null,
             status: response.status,
             requestUrl,
             errorBody,
@@ -154,54 +148,35 @@ export async function fetchAccountTransactions(accountId, options = {}) {
 
 export async function fetchContractTransactionHistory(options = {}) {
     const {
-        methodNames = [],
-        maxPages = 3,
-        perPage = 100,
+        maxPages = 1,
+        perPage = 50,
     } = options;
 
     const allItems = [];
-    const uniqueMethods = methodNames.filter(Boolean);
-    const methodsToFetch = uniqueMethods.length ? uniqueMethods : [undefined];
 
     console.log('[NearBlocks] Begin contract history fetch', {
         contractId: config.contractId,
-        methodsToFetch,
         maxPages,
         perPage,
     });
 
-    for (const methodName of methodsToFetch) {
-        let cursor = null;
-        for (let page = 0; page < maxPages; page += 1) {
-            const response = await fetchAccountTransactions(config.contractId, {
-                methodName,
-                cursor,
-                perPage,
-                order: 'desc',
-            });
-            allItems.push(...response.items);
+    let cursor = null;
+    for (let page = 0; page < maxPages; page += 1) {
+        const response = await fetchAccountTransactions(config.contractId, {
+            cursor,
+            perPage,
+            order: 'desc',
+        });
+        allItems.push(...response.items);
 
-            if (!response.cursor || response.items.length === 0) {
-                break;
-            }
-
-            cursor = response.cursor;
+        if (!response.cursor || response.items.length === 0) {
+            break;
         }
+
+        cursor = response.cursor;
     }
 
-    const deduped = [];
-    const seenHashes = new Set();
-    for (const item of allItems) {
-        const txHash = item?.transaction_hash || item?.hash || item?.transaction?.hash;
-        const dedupeKey = txHash || JSON.stringify(item);
-        if (seenHashes.has(dedupeKey)) {
-            continue;
-        }
-        seenHashes.add(dedupeKey);
-        deduped.push(item);
-    }
-
-    return deduped;
+    return allItems;
 }
 
 export async function callViewFunction(methodName, args = {}) {

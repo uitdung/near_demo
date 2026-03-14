@@ -13,6 +13,8 @@ Xem chi tiết về project: [project.md](project.md)
 
 ## Document Reference Files
 
+- Docs cho api: https://api-testnet.nearblocks.io/openapi.json
+
 ### Core Concepts (4 files)
 
 | File | Nội dung | Kích thước |

@@ -281,6 +281,36 @@ function extractTransactionArgs(item) {
     return {};
 }
 
+function extractTransactionPropertyIds(item) {
+    const args = extractTransactionArgs(item);
+    const ids = new Set();
+
+    const directPropertyId = normalizeText(args?.property_id);
+    if (directPropertyId) {
+        ids.add(directPropertyId);
+    }
+
+    if (Array.isArray(args?.items)) {
+        for (const entry of args.items) {
+            const nestedPropertyId = normalizeText(entry?.property_id);
+            if (nestedPropertyId) {
+                ids.add(nestedPropertyId);
+            }
+        }
+    }
+
+    return [...ids];
+}
+
+function findMatchingBatchProperty(item, propertyId) {
+    const args = extractTransactionArgs(item);
+    if (!Array.isArray(args?.items)) {
+        return null;
+    }
+
+    return args.items.find((entry) => normalizeText(entry?.property_id) === propertyId) || null;
+}
+
 function buildPropertyHistoryFallback(property, explorerBaseUrl, reason = '') {
     const timeline = [
         {
@@ -316,7 +346,17 @@ function buildPropertyHistoryTimeline(propertyId, transactions = [], explorerBas
         transactionCount: transactions.length,
     });
 
-    const sortedTransactions = [...transactions].sort((left, right) => {
+    const relevantTransactions = transactions.filter((tx) => {
+        const methodName = extractTransactionMethod(tx);
+        if (!methodName) {
+            return false;
+        }
+
+        const propertyIds = extractTransactionPropertyIds(tx);
+        return propertyIds.includes(propertyId);
+    });
+
+    const sortedTransactions = [...relevantTransactions].sort((left, right) => {
         const leftTimestamp = Number(extractTransactionTimestamp(left) || 0);
         const rightTimestamp = Number(extractTransactionTimestamp(right) || 0);
         return leftTimestamp - rightTimestamp;
@@ -326,25 +366,26 @@ function buildPropertyHistoryTimeline(propertyId, transactions = [], explorerBas
         const transactionHash = extractTransactionHash(tx);
         const methodName = extractTransactionMethod(tx);
         const args = extractTransactionArgs(tx);
-        const normalizedPropertyId = normalizeText(args?.property_id);
-
-
+        const batchItem = findMatchingBatchProperty(tx, propertyId);
+        const effectiveArgs = batchItem || args;
 
         const signerId = extractTransactionSigner(tx);
         const timestamp = extractTransactionTimestamp(tx);
         const explorerUrl = transactionHash ? `${explorerBaseUrl}/txns/${transactionHash}` : null;
 
-        if ((methodName === 'create_property' || methodName === 'upsert_property' || methodName === 'update_property') && timeline.every((entry) => entry.kind !== 'creation')) {
-            const owner = normalizeText(args.owner) || null;
+        if ((methodName === 'create_property' || methodName === 'upsert_property' || methodName === 'update_property' || methodName === 'batch_upsert_properties') && timeline.every((entry) => entry.kind !== 'creation')) {
+            const owner = normalizeText(effectiveArgs?.owner) || null;
             currentOwner = owner || currentOwner;
             timeline.push({
                 kind: 'creation',
-                label: 'Khởi tạo property',
+                label: methodName === 'batch_upsert_properties' ? 'Khởi tạo property từ batch import' : 'Khởi tạo property',
                 action: methodName,
                 actor: signerId,
                 timestamp,
                 owner,
-                detail: `Tạo hoặc ghi bản ghi đầu tiên cho property ${propertyId}.`,
+                detail: methodName === 'batch_upsert_properties'
+                    ? `Property ${propertyId} được ghi vào contract thông qua batch import.`
+                    : `Tạo hoặc ghi bản ghi đầu tiên cho property ${propertyId}.`,
                 transactionHash,
                 explorerUrl,
             });
@@ -352,7 +393,7 @@ function buildPropertyHistoryTimeline(propertyId, transactions = [], explorerBas
         }
 
         if (methodName === 'transfer_property') {
-            const newOwner = normalizeText(args.new_owner) || null;
+            const newOwner = normalizeText(effectiveArgs?.new_owner) || null;
             const previousOwner = currentOwner;
             timeline.push({
                 kind: 'transfer',
@@ -378,8 +419,8 @@ function buildPropertyHistoryTimeline(propertyId, transactions = [], explorerBas
 async function buildPropertyHistory(propertyId, property, explorerBaseUrl) {
     try {
         const transactions = await fetchContractTransactionHistory({
-            maxPages: 2,
-            perPage: 100,
+            maxPages: 1,
+            perPage: 50,
         });
 
         const timeline = buildPropertyHistoryTimeline(propertyId, transactions, explorerBaseUrl);
@@ -459,12 +500,22 @@ router.get('/properties/:propertyId/blockchain-detail', async (req, res) => {
             return res.status(404).json({ success: false, error: 'Property not found' });
         }
 
-        const [state, network] = await Promise.all([
-            queryContractState(),
-            Promise.resolve(getNetworkConfig()),
-        ]);
-
+        const network = getNetworkConfig();
         const explorerBaseUrl = getExplorerBaseUrl(network.networkId);
+
+        let state = {
+            blockHeight: null,
+            blockHash: null,
+            values: [],
+            unavailableReason: null,
+        };
+
+        try {
+            state = await queryContractState();
+        } catch (stateError) {
+            state.unavailableReason = stateError.message;
+        }
+
         const history = await buildPropertyHistory(propertyId, property, explorerBaseUrl);
 
         res.json({
@@ -477,7 +528,11 @@ router.get('/properties/:propertyId/blockchain-detail', async (req, res) => {
                     rpcUrl: network.nodeUrl,
                     latestObservedBlockHeight: state.blockHeight,
                     latestObservedBlockHash: state.blockHash,
-                    rawStatePairs: state.values.length,
+                    rawStatePairs: Array.isArray(state.values) ? state.values.length : 0,
+                    rawStateAvailable: !state.unavailableReason,
+                    rawStateNote: state.unavailableReason
+                        ? `Raw state preview unavailable: ${state.unavailableReason}`
+                        : 'Raw state preview loaded successfully.',
                     explorer: {
                         contract: `${explorerBaseUrl}/address/${getContractId()}`,
                         updater: `${explorerBaseUrl}/address/${property.updated_by}`,
